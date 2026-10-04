@@ -1,11 +1,9 @@
 # Technical Design Doc
 
 | | |
-|---|---|
 | **Project** | mini-arabic-gpt |
 | **Status** | Draft |
 | **Version** | 0.1 |
-| **Owner** | Marwan |
 | **Last updated** | 2026-10-04 |
 | **Requirements** | `01-prd.md` |
 
