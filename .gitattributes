@@ -1,0 +1,19 @@
+# Normalize line endings to LF for all text files
+* text=auto eol=lf
+
+# Windows scripts need CRLF to run correctly
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Binary files: never modify
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.pdf binary
+*.pt binary
+*.pth binary
+*.bin binary
+*.safetensors binary
+*.parquet binary
