@@ -12,7 +12,7 @@ Guidance for Claude Code when working in this repository. Read this fully at the
 
 ## Current phase
 
-**Phase 1: Documentation.** No source code exists yet. Do not create code files, code folders, or configs until the relevant doc is approved and I ask for them.
+**Phase 1: Documentation.** The only code is the corpus inspection tooling: `scripts/inspect_data.py`, with outputs in `reports/data-inspection/` and dependencies in `requirements-dev.txt`. No model, tokenizer, or data-pipeline code exists yet. Do not create other code files, code folders, or configs until the relevant doc is approved and I ask for them.
 
 The code layout (`src/`, `tests/`, `scripts/`, `configs/`, `app/`) is provisional. It gets finalized in `docs/02-design-doc.md`.
 
@@ -30,6 +30,7 @@ The code layout (`src/`, `tests/`, `scripts/`, `configs/`, `app/`) is provisiona
 - **VRAM budget is 8 GB.** Task Manager reports ~15.6 GB "GPU memory", but that includes shared system RAM. Plan only against the 8 GB.
 - **Never install a CPU-only PyTorch build,** and never install a CUDA build older than 12.8: Blackwell GPUs need CUDA 12.8 or newer.
 - **Do not change the PyTorch version** unless I explicitly ask.
+- **Hugging Face downloads:** if a download fails with a xet/CAS error, set `HF_HUB_DISABLE_XET=1` and retry.
 
 Verify the GPU works:
 
@@ -95,6 +96,9 @@ When I correct a mistake in your reasoning or code, propose a log entry covering
 ```
 docs/          Project documentation (01–11), adr/, diagrams/
 experiments/   Experiment log
+scripts/       Corpus inspection tool (inspect_data.py)
+reports/       Data inspection outputs (metrics, reading samples)
+requirements-dev.txt  Dev and inspection dependencies
 CLAUDE.md      This file
 README.md      Project entry point
 ```
