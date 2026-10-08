@@ -1,0 +1,216 @@
+{
+  "candidates": {
+    "fineweb2": {
+      "arabic_character_ratio": {
+        "definition": "Arabic letters / all letters (Unicode L*), per document",
+        "docs_with_zero_letters_excluded": 0,
+        "mean": 0.983478,
+        "median": 1.0,
+        "share_below_0.80": 0.01458
+      },
+      "boilerplate_rate": {
+        "docs_with_hit": 1540,
+        "per_phrase_docs": {
+          "all rights reserved": 160,
+          "cookies": 28,
+          "privacy policy": 18,
+          "اترك تعليقا": 36,
+          "اتصل بنا": 332,
+          "اشترك في النشرة البريدية": 2,
+          "اقرأ أيضا": 435,
+          "اقرأ أيضاً": 202,
+          "تابعونا على": 63,
+          "جميع الحقوق محفوظة": 196,
+          "حقوق النشر محفوظة": 32,
+          "سياسة الخصوصية": 155,
+          "شروط الاستخدام": 49,
+          "قد يعجبك أيضا": 18,
+          "ملفات تعريف الارتباط": 145,
+          "مواضيع ذات صلة": 46
+        },
+        "rate": 0.0308
+      },
+      "diacritics_rate": {
+        "definition": "diacritic chars / (Arabic letters + diacritic chars)",
+        "docs_without_arabic_chars_excluded": 0,
+        "per_document_mean": 0.00716,
+        "pooled": 0.012302
+      },
+      "document_count": {
+        "full_set": 2693000,
+        "sample": 50000
+      },
+      "exact_duplicate_rate": {
+        "docs_in_duplicate_groups": 0,
+        "rate": 0.0,
+        "removable_docs": 0,
+        "removable_rate": 0.0,
+        "scope": "FULL set (all rows hashed)"
+      },
+      "label": "FineWeb-2 Arabic",
+      "manual_quality_score": "not computed: manual (rate the reading-sample file)",
+      "near_duplicate_rate": {
+        "clusters": 0,
+        "docs_in_clusters": 0,
+        "method": "MinHash 128 perms, word 5-grams, Jaccard >= 0.8, LSH + union-find",
+        "rate": 0.0,
+        "removable_docs": 0,
+        "scope": "SAMPLE only (50000 docs): LOWER BOUND on the true rate"
+      },
+      "non_letter_ratio_excluding_whitespace": {
+        "definition": "(N*+P*+S* chars) / (all non-whitespace chars), per document",
+        "docs_with_zero_nonspace_excluded": 0,
+        "mean": 0.037458,
+        "median": 0.033808,
+        "share_above_0.30": 2e-05
+      },
+      "source": {
+        "files": [
+          {
+            "bytes": 4843246685,
+            "path": "data/arb_Arab/train/000_00000.parquet",
+            "rows": 2693000
+          }
+        ],
+        "repo": "HuggingFaceFW/fineweb-2",
+        "revision": "af9c13333eb981300149d5ca60a8e9d659b276b9"
+      },
+      "word_count_sample": {
+        "mean": 513.6518,
+        "median": 267.0,
+        "p5": 72.0,
+        "p95": 1453.0,
+        "share_under_50_words": 0.00208,
+        "total": 25682592
+      }
+    },
+    "wikipedia": {
+      "arabic_character_ratio": {
+        "definition": "Arabic letters / all letters (Unicode L*), per document",
+        "docs_with_zero_letters_excluded": 0,
+        "mean": 0.983196,
+        "median": 1.0,
+        "share_below_0.80": 0.02038
+      },
+      "boilerplate_rate": {
+        "docs_with_hit": 322,
+        "per_phrase_docs": {
+          "all rights reserved": 0,
+          "cookies": 1,
+          "privacy policy": 0,
+          "اترك تعليقا": 0,
+          "اتصل بنا": 0,
+          "اشترك في النشرة البريدية": 0,
+          "اقرأ أيضا": 250,
+          "اقرأ أيضاً": 95,
+          "تابعونا على": 0,
+          "جميع الحقوق محفوظة": 1,
+          "حقوق النشر محفوظة": 0,
+          "سياسة الخصوصية": 2,
+          "شروط الاستخدام": 5,
+          "قد يعجبك أيضا": 0,
+          "ملفات تعريف الارتباط": 1,
+          "مواضيع ذات صلة": 62
+        },
+        "rate": 0.00644
+      },
+      "diacritics_rate": {
+        "definition": "diacritic chars / (Arabic letters + diacritic chars)",
+        "docs_without_arabic_chars_excluded": 0,
+        "per_document_mean": 0.00422,
+        "pooled": 0.007169
+      },
+      "document_count": {
+        "full_set": 1219201,
+        "sample": 50000
+      },
+      "exact_duplicate_rate": {
+        "docs_in_duplicate_groups": 1239,
+        "rate": 0.001016,
+        "removable_docs": 1110,
+        "removable_rate": 0.00091,
+        "scope": "FULL set (all rows hashed)"
+      },
+      "label": "Arabic Wikipedia",
+      "manual_quality_score": "not computed: manual (rate the reading-sample file)",
+      "near_duplicate_rate": {
+        "clusters": 84,
+        "docs_in_clusters": 227,
+        "method": "MinHash 128 perms, word 5-grams, Jaccard >= 0.8, LSH + union-find",
+        "rate": 0.00454,
+        "removable_docs": 143,
+        "scope": "SAMPLE only (50000 docs): LOWER BOUND on the true rate"
+      },
+      "non_letter_ratio_excluding_whitespace": {
+        "definition": "(N*+P*+S* chars) / (all non-whitespace chars), per document",
+        "docs_with_zero_nonspace_excluded": 0,
+        "mean": 0.068632,
+        "median": 0.059574,
+        "share_above_0.30": 0.00084
+      },
+      "source": {
+        "files": [
+          {
+            "bytes": 408241089,
+            "path": "20231101.ar/train-00000-of-00007.parquet",
+            "rows": 174172
+          },
+          {
+            "bytes": 172208447,
+            "path": "20231101.ar/train-00001-of-00007.parquet",
+            "rows": 174172
+          },
+          {
+            "bytes": 144792516,
+            "path": "20231101.ar/train-00002-of-00007.parquet",
+            "rows": 174172
+          },
+          {
+            "bytes": 130751823,
+            "path": "20231101.ar/train-00003-of-00007.parquet",
+            "rows": 174172
+          },
+          {
+            "bytes": 65094867,
+            "path": "20231101.ar/train-00004-of-00007.parquet",
+            "rows": 174171
+          },
+          {
+            "bytes": 156441726,
+            "path": "20231101.ar/train-00005-of-00007.parquet",
+            "rows": 174171
+          },
+          {
+            "bytes": 245773803,
+            "path": "20231101.ar/train-00006-of-00007.parquet",
+            "rows": 174171
+          }
+        ],
+        "repo": "wikimedia/wikipedia",
+        "revision": "b04c8d1ceb2f5cd4588862100d08de323dccfbaa"
+      },
+      "word_count_sample": {
+        "mean": 223.47,
+        "median": 74.0,
+        "p5": 23.0,
+        "p95": 887.0,
+        "share_under_50_words": 0.3005,
+        "total": 11173499
+      }
+    }
+  },
+  "header": {
+    "minhash": {
+      "ngram": 5,
+      "num_perm": 128,
+      "threshold": 0.8
+    },
+    "numpy": "2.5.2",
+    "pyarrow": "25.0.1",
+    "python": "3.12.10",
+    "read_max_chars": 3000,
+    "read_sample_size": 100,
+    "sample_size": 50000,
+    "seed": 42
+  }
+}

@@ -1,0 +1,5 @@
+# Dev/inspection dependencies (PyTorch is installed separately; see CLAUDE.md)
+numpy==2.5.2
+pyarrow==25.0.1
+huggingface_hub==2.1.1
+datasketch==2.0.0

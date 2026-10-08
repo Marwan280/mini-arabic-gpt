@@ -143,6 +143,7 @@ These are resolved in later documents:
 | Exact architecture: layers, heads, embedding size, context length? | `05-model-architecture.md` |
 | Which n-gram baseline, and which evaluation prompts? | `07-evaluation-plan.md` |
 | Demo hosting details and response-time target | `09-ui-spec.md` |
+| Content filtering if web data is added (conflicts with NG8) | A future ADR, only if FineWeb-2 or other web data is added (see `adr/0001-training-corpus.md`) |
 
 ## 12. Related documents
 
