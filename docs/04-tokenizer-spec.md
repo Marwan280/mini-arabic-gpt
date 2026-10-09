@@ -31,7 +31,7 @@ Every rule below is justified by a measurement in `tokenizer-notes.md` (cited as
 
 **Does:** Unicode normalization, character mapping (§4), pre-tokenization (§5), subword segmentation (§6), special tokens (§7).
 
-**Does not:** markup removal, URL removal, whitespace collapsing, or spacing repair around punctuation. Those are Data Spec §8 steps 2 and 3 and happen before text reaches the tokenizer. The tokenizer must still behave sensibly if such residue reaches it (TR4), but it does not try to fix it.
+**Does not:** markup removal, URL removal, whitespace collapsing beyond the defensive N4, or spacing repair around punctuation. Those are Data Spec §8 steps 2 and 3 and happen before text reaches the tokenizer. The tokenizer must still behave sensibly if such residue reaches it (TR4), but it does not try to fix it.
 
 **Does not:** repair fused words (TN §8). No lexicon is available, and the measured patterns mix defects with legitimate compounds. Fused words are tokenized as they are.
 
@@ -45,28 +45,28 @@ Applied in this order, to every string, before pre-tokenization. Each rule is a 
 |---|---|---|
 | N1 | Apply **NFKC**. | TN §11: NFC changes 1 document in 50,000; NFKC changes 11.9% of cleaned documents, almost all by converting no-break space (U+00A0) to a space, plus superscripts and the ellipsis character. These compatibility forms carry no meaning the model needs. |
 
-**Consequence to verify (§10):** NFKC also decomposes Arabic presentation forms. TN §11 found none except the ornate brackets ﴾ ﴿, which NFKC leaves unchanged.
+**Consequence to verify (§10):** NFKC also decomposes Arabic presentation forms. TN §11 found none except the ornate brackets ﴾ ﴿, which NFKC leaves unchanged. NFKC also turns ½ into 1⁄2 with a fraction slash (U+2044); N14 maps U+2044 to `/`.
 
 ### 4.2 Invisible and control characters
 
 | Rule | Decision | Evidence |
 |---|---|---|
 | N2 | Remove zero-width joiner (U+200D), zero-width space (U+200B), soft hyphen (U+00AD), byte-order mark (U+FEFF), Arabic letter mark (U+061C), and bidirectional marks and isolates (U+200E, U+200F, U+202A–U+202E, U+2066–U+2069). | TN §11: all rare (< 0.2% of documents). They affect display only. |
-| N3 | Remove **zero-width non-joiner** (U+200C). | TN §11: 85 cleaned documents, mostly Persian compound names ("جهان‌آرا"). *Provisional:* removing it merges the two parts visually; keeping it adds a near-invisible token. Removal is simpler. |
+| N3 | Remove **zero-width non-joiner** (U+200C). | TN §11: 85 cleaned documents; Persian compound names and list markers ("جهان‌آرا"). *Provisional:* removing it merges the two parts visually; keeping it adds a near-invisible token. Removal is simpler. |
 | N4 | Map tab to a space. Collapse any run of spaces to one (defensive; Data Spec §8 step 3 should already have done this). Newlines are kept. | TN §10, §11 |
 
 ### 4.3 Script variants
 
 | Rule | Decision | Evidence |
 |---|---|---|
-| N5 | Map Farsi yeh ی (U+06CC) → Arabic yeh ي (U+064A). Map keheh ک (U+06A9) → Arabic kaf ك (U+0643). | TN §3: these are keyboard-origin variants of Arabic letters, present in 0.94% and 0.45% of cleaned documents. Mapping also makes the demo robust to Persian-layout keyboards. |
+| N5 | Map Farsi yeh ی (U+06CC) → Arabic yeh ي (U+064A). Map keheh ک (U+06A9) → Arabic kaf ك (U+0643). | TN §3: these are script variants of Arabic letters; in Wikipedia they occur mostly in Persian and Kurdish words. They are present in 0.94% and 0.45% of cleaned documents. Mapping also makes the demo robust to Persian-layout keyboards. |
 | N6 | **Keep** gaf گ, peh پ, tcheh چ, veh ڤ, heh doachashmee ھ, and other extended letters as they are. | TN §3: they represent sounds Arabic letters do not ("نوڤمبر", "ڤولكسڤاغن"). Mapping would change spelling. They are rare and will be covered by the vocabulary or byte fallback (§6). |
 
 ### 4.4 Diacritics (tashkeel)
 
 | Rule | Decision | Evidence |
 |---|---|---|
-| N7 | **Remove all Arabic diacritics**: fathatan, dammatan, kasratan, fatha, damma, kasra, shadda, sukun (U+064B–U+0652), superscript alef (U+0670), and the Quranic annotation marks (U+06D6–U+06ED). | TN §4: 0.86% of characters in cleaned text; 73% of documents contain a mark, but 38% of all marks are the fathatan of "أيضاً"-type words. Only 1.1% of documents are heavily diacritized. Standard MSA prose is written without diacritics. |
+| N7 | **Remove all Arabic diacritics**: fathatan, dammatan, kasratan, fatha, damma, kasra, shadda, sukun, maddah and hamza marks (all of U+064B–U+065F), superscript alef (U+0670), and the Quranic annotation marks (U+06D6–U+06ED). | TN §4: 0.86% of Arabic letters plus marks (0.66% of all characters) in cleaned text; 73% of documents contain a mark, but 38% of all marks are fathatan (e.g. أيضاً). Only 1.1% of documents are heavily diacritized. Standard MSA prose is written without diacritics. |
 
 **Consequences:**
 - The model cannot generate diacritics. Accepted under PRD goals; disclosed in the Model Card.
@@ -77,9 +77,9 @@ Applied in this order, to every string, before pre-tokenization. Each rule is a 
 
 | Rule | Decision | Evidence |
 |---|---|---|
-| N8 | Remove tatweel (U+0640) **only when it is between two Arabic letters** (decorative elongation inside a word). Keep it otherwise. | TN §5: 76.5% of tatweel runs are the connector in the Hijri marker هـ and the prefixes بـ, لـ. Removing tatweel everywhere would rewrite "1313 هـ" as "1313 ه". Decorative use between letters is in 3.2% of documents. |
+| N8 | Remove tatweel (U+0640) **only when it is between two Arabic letters**. Keep it otherwise. | TN §5: 76.5% of tatweel runs are the connector in the Hijri marker هـ and the prefixes بـ, لـ. Removing tatweel everywhere would rewrite "1313 هـ" as "1313 ه". Tatweel between two Arabic letters is in 3.2% of documents: 19.3% of such runs are a one-letter clitic joined to the next word (بـعملية), 80.7% are inside a longer word. |
 
-**Consequence:** هـ, بـ, لـ remain distinct tokens from ه, ب, ل. This is intended.
+**Consequence:** هـ, بـ, لـ remain distinct tokens from ه, ب, ل wherever the tatweel is kept. This is intended. A clitic joined to a following letter loses its tatweel: بـعملية becomes بعملية; accepted.
 
 ### 4.6 Digits
 
@@ -94,8 +94,8 @@ Applied in this order, to every string, before pre-tokenization. Each rule is a 
 |---|---|---|
 | N11 | Map ASCII `,` → Arabic comma `،`; `;` → `؛`; `?` → `؟`. | TN §10: Arabic forms dominate 21:1, 16:1, 12:1 in cleaned text. One form per mark. |
 | N12 | Map Arabic percent ٪ (U+066A) → `%`. | TN §10: ASCII % dominates 16:1. |
-| N13 | Map curly double quotes “ ” and ASCII `"` → the guillemets « » **is not done**. Quotes are kept as they are. | TN §10: guillemets are the Wikipedia style, but ASCII quotes mark different usage (code, English fragments). Collapsing them is a guess; leaving them costs a few vocabulary entries. *Provisional.* |
-| N14 | Map en dash – and em dash — → hyphen-minus `-`. Map minus sign − → `-`. Map the ellipsis character … (after NFKC it is already `...`). | TN §10: dash variants carry no meaning difference the model needs. |
+| N13 | Map curly double quotes “ ” and ASCII `"` → the guillemets « » **is not done**. Quotes are kept as they are. | TN §10: guillemets are the Wikipedia style, but ASCII quotes may mark different usage; not measured. Collapsing them is a guess; leaving them costs a few vocabulary entries. *Provisional.* |
+| N14 | Map en dash – and em dash — → hyphen-minus `-`. Map minus sign − → `-`. Map the ellipsis character … (after NFKC it is already `...`). Map the fraction slash ⁄ (U+2044), which NFKC produces from ½, to `/`. | TN §10: dash variants carry no meaning difference the model needs. TN §11: NFKC turns ½ (77 raw occurrences) into 1⁄2. |
 
 **Exception to N11:** a comma, semicolon, or question mark that appears **inside a run of Latin letters or digits** (e.g. "1,234", "e.g., ") is left unchanged. *Provisional*: implemented as a context rule; confirmed in §10.
 
@@ -107,7 +107,7 @@ Applied in this order, to every string, before pre-tokenization. Each rule is a 
 | Alef maksura vs yeh (ى / ي) | **Kept distinct.** | TN §7: ى is 8.3% of the pair; على/علي differ in meaning. |
 | Teh marbuta vs heh (ة / ه) | **Kept distinct.** | TN §7: grammatically different. |
 | Hamza on waw/yeh (ؤ ئ) | Kept. | Standard orthography. |
-| Latin letters and other scripts | Kept, case preserved. | TN §9: Latin appears in 36% of cleaned documents, mostly as glosses in parentheses. Removing it would damage sentences. |
+| Latin letters and other scripts | Kept, case preserved. | TN §9: 21.3% of documents have a parenthesized Latin phrase; 36% have any Latin. Removing it would damage sentences. |
 
 **Revisit trigger:** if FineWeb-2 is added to the corpus (ADR-0001 revisit), the alef/yeh/teh-marbuta decisions are reopened, because web text has far more non-standard spelling (TN §14: hamza-less "اقامت", "الشركه"). See §11.
 
@@ -119,7 +119,7 @@ Pre-tokenization decides where a word boundary can never be crossed by a subword
 |---|---|---|
 | P1 | Split on whitespace. Each space is attached to the **following** word as a prefix marker (the standard "metaspace" convention), so that word starts are distinguishable. | Standard practice; needed for correct detokenization. |
 | P2 | Split between an Arabic letter and a Latin letter in both directions. | TN §8: 629 cleaned documents have Arabic directly against Latin ("الCASS", "وIBM"). The Arabic part is a prefix; separating it lets the prefix be shared. |
-| P3 | Split between a digit and an Arabic letter in both directions, **except**: do not split a **single** Arabic letter in {و, ب, ل, ف, ك} that precedes a digit, and do not split the era markers م and هـ that follow a digit. | TN §8: 75% of letter→digit contacts are these one-letter prefixes; 83% of digit→letter contacts are era markers. Splitting them would detach a prefix from its number. *Provisional*: the exception list is confirmed in §10. |
+| P3 | Split between a digit and an Arabic letter in both directions, **except**: do not split a **single** Arabic letter in {و, ب, ل, ف, ك} that precedes a digit, and do not split the era markers م, هـ and ھ (heh doachashmee) that follow a digit. The tatweel in بـ59 is kept by N8 (it is not between two Arabic letters), and the pre-token is بـ. | TN §8: 75% of letter→digit contacts are these one-letter prefixes; 83% of digit→letter contacts are era markers. Splitting them would detach a prefix from its number. TN §3: ھ stands in for the Hijri marker in some articles (111 occurrences in 27 cleaned documents). *Provisional*: the exception list is confirmed in §10. |
 | P4 | Punctuation characters are their own pre-tokens (each punctuation character separated from letters on both sides). | TN §8: 7% of cleaned documents have letter-punctuation-letter with no space ("الوقت.وتقول"). Isolating punctuation stops a subword from spanning a sentence boundary. |
 | P5 | Digit strings are split into runs of at most 3 digits, from the right. | Standard for small models: "29004" → "29", "004". Keeps the number vocabulary small and the model's arithmetic-adjacent behaviour consistent. *Provisional.* |
 
@@ -181,6 +181,7 @@ normalization:
     "–": "-"
     "—": "-"
     "−": "-"
+    "⁄": "/"
   remove_diacritics: true
   tatweel: between_letters_only
   punctuation_context_exception: latin_or_digit_run
@@ -189,7 +190,7 @@ pretokenization:
   split_digit_letter: true
   digit_letter_exceptions:
     prefix_letters: ["و", "ب", "ل", "ف", "ك"]
-    era_suffixes: ["م", "هـ"]
+    era_suffixes: ["م", "هـ", "ھ"]
   isolate_punctuation: true
   digit_group_size: 3
 model:
@@ -237,6 +238,6 @@ The tokenizer is accepted only when all of the following are recorded in `tokeni
 
 - `03-data-spec.md` §8 and §12: what reaches the tokenizer and the document separator
 - `reports/data-inspection/tokenizer-notes.md`: the measurements behind every rule
-- `docs/adr/0002-tokenizer.md`: algorithm, library and vocabulary decision record (to be written)
+- `docs/adr/0002-tokenizer.md`: algorithm, library and vocabulary decision record (proposed)
 - `05-model-architecture.md`: consumes the vocabulary size
 - `08-testing-strategy.md`: tokenizer tests

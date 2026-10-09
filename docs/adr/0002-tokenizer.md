@@ -4,7 +4,7 @@
 |---|---|
 | **Status** | Proposed. Becomes Accepted when the verification in `docs/04-tokenizer-spec.md` §10 passes and its results are recorded in `artifacts/tokenizer/tokenizer_config.yaml` |
 | **Date** | 2026-10-09 |
-| **Deciders** | Project authors (Marwan, Ghada) |
+| **Deciders** | Marwan |
 | **Related** | `docs/04-tokenizer-spec.md`; `docs/03-data-spec.md` §8, §12; `docs/adr/0001-training-corpus.md`; PRD FR3, G2, NFR2; Design Doc §4.2 |
 | **Evidence** | `reports/data-inspection/tokenizer-notes.md`, `char-stats_wikipedia.json` |
 
