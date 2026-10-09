@@ -88,3 +88,24 @@ Reopen this decision if any of the following occurs:
 3. **A small pilot run shows repetitive bot-template generations** that cleaning does not remove.
 
 If FineWeb-2 is added later, a content filter becomes necessary and PRD NG8 must be amended through a new ADR (see PRD §11, Open questions). New quality filters would also be needed, since the current §8 filters do not catch its dominant noise.
+
+## Amendment 1 (2026-10-09): revisit trigger 1 fired; corpus not reopened
+
+*The text above is unchanged. This section records a review of the revisit triggers; the status stays Accepted.*
+
+| | |
+|---|---|
+| **Decided by** | Marwan |
+| **Evidence** | `docs/05-model-architecture.md` §6 and Appendix A (preliminary, trial tokenizer); [Muennighoff et al. 2023](https://arxiv.org/abs/2305.16264) |
+
+**What fired.** Trigger 1 ("measured tokens per word is below 1.5"). A trial 32k byte-level BPE tokenizer, trained with the `04` §4 to §5 rules approximated on a seeded 10% Wikipedia sample, gave **1.4755 tokens per word** on a held-out sample (preliminary; the formal measurement is `04` §10). With the full cleaned set (480,404 articles, 207,947,124 words after all Data Spec §8 steps; the 214.1M words above is the length filter alone) the train split is about **301M tokens**, below the 321–535M estimated in Context.
+
+**Decision: do not reopen the corpus.** Stay with cleaned Wikipedia and train for **1.5 to 2 epochs** on the `base` model (23.1M parameters at V = 32,000). That is 19.5 to 26.1 training tokens per parameter, around the Data Spec's guideline of 20, which this project treats as a guideline and not a floor (`05` §6.3).
+
+**Evidence for multi-epoch training.** Muennighoff et al. (NeurIPS 2023; JMLR 2025) report, from experiments with up to 900B training tokens and 9B-parameter models, that at a fixed compute budget training with up to 4 epochs of repeated data gives negligible change in loss compared with unique data, and that the value of repeated tokens decays beyond that. Sources: [arXiv 2305.16264](https://arxiv.org/abs/2305.16264), [JMLR 26(24-1000)](https://jmlr.org/papers/v26/24-1000.html). Their abstract was read through search results in this session, not the full text. **Limit:** their largest models (9B parameters) are about 390 times ours, and the smallest tested were not checked, so this is **provisional** here. It is checked by the validation-loss curve against tokens seen in `06-training-plan.md`; if validation loss rises while training loss falls, dropout is raised or epochs are reduced.
+
+**Reserve.** FineWeb-2 remains the reserve corpus. Adding it requires a content filter (the cost noted above, PRD NG8 amended through a new ADR), new quality filters, and, per ADR-0002, retraining both the tokenizer and the model.
+
+**Trigger 2.** On the project GPU the model processes about 63k tokens/s with the explicit attention (`05` §8.3), so a 6-hour run could consume about 1.36B tokens, 4.5 epochs of the supply. The condition of trigger 2 is therefore also met in the literal sense; the decision above (1.5 to 2 epochs, 1.7 to 2.7 hours) covers it, and the unused time budget is accepted.
+
+**Open point.** The tokens-per-word figure depends on the vocabulary size, which is still provisional (`05` §12).
