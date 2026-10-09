@@ -62,3 +62,14 @@ Copy this block for each new entry. Use the next free ID. Dates are ISO (YYYY-MM
 - **Root cause:** The corpora were compared before cleaning. Wikipedia's defects are structural (stubs, trailing category lines) and hid the quality of its articles, while raw size and the raw clean rate favoured FineWeb-2.
 - **Fix:** Decision recorded in `docs/adr/0001-training-corpus.md`; the post-cleaning simulation added to Data Spec §7.
 - **Lesson:** Raw size is misleading before cleaning; compare corpora after simulated cleaning, not before.
+
+### EXP-005: Pre-tokenization rules P3 and P5 conflict on digits with a one-letter prefix
+
+- **ID:** EXP-005
+- **Date:** 2026-10-09
+- **Stage:** Tokenizer specification (trial tokenizer for `05-model-architecture.md`)
+- **What happened:** Implementing the rules of `docs/04-tokenizer-spec.md` §5 as regular expressions for a trial tokenizer showed that "و2010" becomes the pre-tokens "و2" and "010". P3 (a one-letter prefix is not split from a following digit) plus P5 (digit groups of at most three, counted from the right) attach the prefix to the first, shorter digit group. The check in §10 expects the prefix "as its own piece, not merged into the digits". Related results: "بـ59" stays one pre-token, "791هـ" stays one pre-token, "1920م" becomes "1" and "920م", "29004" becomes "29" and "004".
+- **How it was caught:** By running the rules on real text (measurement), not by reading the spec; the spec reads as consistent.
+- **Root cause:** Two rules were specified separately and their interaction on the same characters was not tested before writing §10's expected behaviour.
+- **Fix:** Not applied. Two options are recorded in `05-model-architecture.md` §13 (item 5): keep the prefix with the digits and reword §10, or make the prefix its own pre-token and reword P3. The decision belongs to `04` (Part D of the spec work). The §10 unit tests must cover prefix plus digits, and the era-marker cases above.
+- **Lesson:** Test rule interactions on real strings when the rules are written, not only each rule alone.
