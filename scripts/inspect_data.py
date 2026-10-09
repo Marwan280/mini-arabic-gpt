@@ -494,6 +494,433 @@ def render_markdown(result: dict) -> str:
 
 
 # ---------------------------------------------------------------------------
+# Character statistics (--char-stats): measurements for the Tokenizer Spec
+# ---------------------------------------------------------------------------
+# Runs INSTEAD of the quality metrics: it draws the same sample as the main run
+# (same seed, same sample size) and writes char-stats_<candidate>.json. It never
+# touches the metrics files or the reading-sample files, so it cannot overwrite ratings.
+def _ranges_to_class(ranges) -> str:
+    return "".join(f"\\u{lo:04X}-\\u{hi:04X}" for lo, hi in ranges)
+
+
+_AR_L = _ranges_to_class(_ARABIC_LETTER_RANGES)  # Arabic letters (tatweel included)
+_AR_LN = _AR_L.replace("\\u0621-\\u064A", "\\u0621-\\u063F\\u0641-\\u064A")  # without tatweel
+_DIAC = _ranges_to_class(_DIACRITIC_RANGES)
+_DIG = "0-9٠-٩۰-۹"
+
+# Named patterns; each is counted as occurrences and as documents containing it.
+_EVENTS = {
+    "digit_then_arabic_letter": rf"[{_DIG}][{_AR_L}]",
+    "digit_then_era_marker_m_or_hijri": rf"[{_DIG}](?:م|هـ?)(?![{_AR_L}])",
+    "arabic_letter_then_digit": rf"[{_AR_L}][{_DIG}]",
+    "single_letter_prefix_then_digit": rf"(?<![{_AR_L}])[وبلفك][{_DIG}]",
+    "arabic_punct_arabic_no_space": rf"[{_AR_LN}]{{2}}[.,،؛;:؟?!][{_AR_LN}]{{2}}",
+    "arabic_letter_adjacent_to_latin_letter": rf"[A-Za-z][{_AR_L}]|[{_AR_L}][A-Za-z]",
+    "arabic_letter_run_ge_15": rf"(?:[{_AR_LN}][{_DIAC}ـ]*){{15,}}",
+    "arabic_letter_run_ge_20": rf"(?:[{_AR_LN}][{_DIAC}ـ]*){{20,}}",
+    "arabic_letter_run_ge_25": rf"(?:[{_AR_LN}][{_DIAC}ـ]*){{25,}}",
+    "tatweel_run_ge_2": r"ـ{2,}",
+    "tatweel_between_letters": rf"[{_AR_LN}]ـ+[{_AR_LN}]",
+    "tatweel_after_heh": r"هـ",
+    "tatweel_before_digit_or_latin": rf"ـ[{_DIG}A-Za-z]",
+    "repeated_arabic_letter_run_ge_4": rf"([{_AR_LN}])\1{{3,}}",
+    "latin_words_ge_2_letters": r"[A-Za-z]{2,}",
+    "parenthesized_latin_phrase": r"\([^()\n]{0,100}[A-Za-z]{3,}[^()\n]{0,100}\)",
+    "ascii_thousands_separator_number": r"\d{1,3}(?:,\d{3})+(?!\d)",
+    "decimal_point_number": r"\d\.\d",
+    "html_tag": r"</?[A-Za-z][^<>\n]{0,80}>",
+    "empty_brackets": r"\(\s*\)|\[\s*\]|«\s*»",
+    "float_artifact_ge_8_decimals": r"\d+\.\d{8,}",
+    "digit_run_ge_8": rf"[{_DIG}]{{8,}}",
+    "url": r"https?://\S+|www\.\S+",
+    "space_before_punctuation": r"[ \t][،,؛:؟?!.]",
+    "double_space_inside_line": r"[^\S\n]{2,}",
+}
+_EVENT_RX = {k: re.compile(v) for k, v in _EVENTS.items()}
+_DIGIT_RUN = re.compile(rf"[{_DIG}]+")
+
+_CP_PERSIAN_URDU = [
+    (0x06CC, "FARSI YEH"), (0x06A9, "KEHEH"), (0x06A4, "VEH"), (0x067E, "PEH"),
+    (0x0686, "TCHEH"), (0x0698, "JEH"), (0x06AF, "GAF"), (0x0679, "TTEH"),
+    (0x06BE, "HEH DOACHASHMEE"), (0x06C1, "HEH GOAL"), (0x06D2, "YEH BARREE"),
+    (0x06C0, "HEH WITH YEH ABOVE"),
+]
+_CP_ARABIC_FORMS = [
+    (0x0627, "ALEF"), (0x0623, "ALEF WITH HAMZA ABOVE"), (0x0625, "ALEF WITH HAMZA BELOW"),
+    (0x0622, "ALEF WITH MADDA ABOVE"), (0x0671, "ALEF WASLA"), (0x0621, "HAMZA"),
+    (0x0624, "WAW WITH HAMZA ABOVE"), (0x0626, "YEH WITH HAMZA ABOVE"),
+    (0x0649, "ALEF MAKSURA"), (0x064A, "ARABIC YEH"), (0x0629, "TEH MARBUTA"),
+    (0x0647, "HEH"), (0x0643, "ARABIC KAF"),
+]
+_CP_DIACRITICS = [
+    (0x064B, "FATHATAN"), (0x064C, "DAMMATAN"), (0x064D, "KASRATAN"), (0x064E, "FATHA"),
+    (0x064F, "DAMMA"), (0x0650, "KASRA"), (0x0651, "SHADDA"), (0x0652, "SUKUN"),
+    (0x0653, "MADDAH ABOVE"), (0x0654, "HAMZA ABOVE MARK"), (0x0655, "HAMZA BELOW MARK"),
+    (0x0670, "SUPERSCRIPT ALEF"), (0x0640, "TATWEEL (not a diacritic; counted as a letter)"),
+]
+_CP_PUNCTUATION = [
+    (0x060C, "ARABIC COMMA"), (0x002C, "COMMA"), (0x061B, "ARABIC SEMICOLON"),
+    (0x003B, "SEMICOLON"), (0x061F, "ARABIC QUESTION MARK"), (0x003F, "QUESTION MARK"),
+    (0x066A, "ARABIC PERCENT SIGN"), (0x0025, "PERCENT SIGN"),
+    (0x066B, "ARABIC DECIMAL SEPARATOR"), (0x066C, "ARABIC THOUSANDS SEPARATOR"),
+    (0x002E, "FULL STOP"), (0x06D4, "ARABIC FULL STOP (Urdu)"), (0x003A, "COLON"),
+    (0x0021, "EXCLAMATION MARK"), (0x066D, "ARABIC FIVE POINTED STAR"),
+    (0x00AB, "LEFT GUILLEMET"), (0x00BB, "RIGHT GUILLEMET"), (0x0022, "QUOTATION MARK"),
+    (0x0027, "APOSTROPHE"), (0x201C, "LEFT DOUBLE QUOTE"), (0x201D, "RIGHT DOUBLE QUOTE"),
+    (0x2018, "LEFT SINGLE QUOTE"), (0x2019, "RIGHT SINGLE QUOTE"),
+    (0x201E, "DOUBLE LOW-9 QUOTE"), (0x201A, "SINGLE LOW-9 QUOTE"),
+    (0x2039, "SINGLE LEFT ANGLE QUOTE"), (0x203A, "SINGLE RIGHT ANGLE QUOTE"),
+    (0x002D, "HYPHEN-MINUS"), (0x2010, "HYPHEN"), (0x2011, "NON-BREAKING HYPHEN"),
+    (0x2012, "FIGURE DASH"), (0x2013, "EN DASH"), (0x2014, "EM DASH"),
+    (0x2015, "HORIZONTAL BAR"), (0x2212, "MINUS SIGN"), (0x2026, "ELLIPSIS"),
+    (0x0028, "LEFT PARENTHESIS"), (0x0029, "RIGHT PARENTHESIS"), (0x005B, "LEFT BRACKET"),
+    (0x005D, "RIGHT BRACKET"), (0x007B, "LEFT BRACE"), (0x007D, "RIGHT BRACE"),
+    (0xFD3E, "ORNATE LEFT PARENTHESIS"), (0xFD3F, "ORNATE RIGHT PARENTHESIS"),
+    (0x2022, "BULLET"), (0x00B7, "MIDDLE DOT"), (0x002F, "SOLIDUS"), (0x007C, "VERTICAL LINE"),
+]
+_CP_INVISIBLE_AND_SPACES = [
+    (0x0009, "TAB"), (0x00A0, "NO-BREAK SPACE"), (0x00AD, "SOFT HYPHEN"),
+    (0x2002, "EN SPACE"), (0x2003, "EM SPACE"), (0x2009, "THIN SPACE"),
+    (0x202F, "NARROW NO-BREAK SPACE"), (0x200B, "ZERO WIDTH SPACE"),
+    (0x200C, "ZERO WIDTH NON-JOINER"), (0x200D, "ZERO WIDTH JOINER"),
+    (0x200E, "LEFT-TO-RIGHT MARK"), (0x200F, "RIGHT-TO-LEFT MARK"),
+    (0x061C, "ARABIC LETTER MARK"), (0x202A, "LRE"), (0x202B, "RLE"), (0x202C, "PDF"),
+    (0x202D, "LRO"), (0x202E, "RLO"), (0x2066, "LRI"), (0x2067, "RLI"), (0x2068, "FSI"),
+    (0x2069, "PDI"), (0xFEFF, "ZERO WIDTH NO-BREAK SPACE / BOM"),
+]
+
+# Trailing-section headings used to approximate Data Spec step 3a (no empty-heading rule).
+_WIKI_TAIL_HEADINGS = (
+    "مراجع", "المراجع", "مصادر", "المصادر", "وصلات خارجية", "روابط خارجية",
+    "الوصلات الخارجية", "انظر أيضا", "اقرأ أيضا", "مواضيع ذات صلة", "معرض صور",
+)
+
+
+def _strip_marks(s: str) -> str:
+    return "".join(c for c in unicodedata.normalize("NFD", s) if not unicodedata.combining(c))
+
+
+_TAIL_KEYS = {_strip_marks(h) for h in _WIKI_TAIL_HEADINGS}
+
+
+def strip_trailing_sections(text: str) -> str:
+    """Approximation of Data Spec step 3a: cut from the first reference-type heading line."""
+    lines = text.split("\n")
+    for k, line in enumerate(lines):
+        if _strip_marks(line).strip() in _TAIL_KEYS:
+            return "\n".join(lines[:k])
+    return text
+
+
+_script_cache: dict[str, str] = {}
+_info_cache: dict[str, tuple] = {}
+
+
+def _script_of(ch: str) -> str:
+    s = _script_cache.get(ch)
+    if s is None:
+        name = unicodedata.name(ch, "")
+        s = name.split(" ", 1)[0] if name else "UNNAMED"
+        _script_cache[ch] = s
+    return s
+
+
+def _char_info(ch: str):
+    """(class id from char_class, is_letter, script) with caching."""
+    v = _info_cache.get(ch)
+    if v is None:
+        is_letter = unicodedata.category(ch)[0] == "L"
+        v = (char_class(ch), is_letter, _script_of(ch) if is_letter else None)
+        _info_cache[ch] = v
+    return v
+
+
+_DIGIT_CHARS = set("0123456789") | {chr(c) for c in range(0x0660, 0x066A)} | {chr(c) for c in range(0x06F0, 0x06FA)}
+_TATWEEL_RUN = re.compile("ـ+")
+
+
+def _ctx_kind(ch) -> str:
+    """Coarse kind of a neighbouring character (None = start/end of the text)."""
+    if ch is None:
+        return "text boundary"
+    if ch == "\n":
+        return "newline"
+    if ch.isspace():
+        return "space"
+    if ch in _DIGIT_CHARS:
+        return "digit"
+    if char_class(ch) == C_AR_LETTER:
+        return "arabic letter"
+    if char_class(ch) == C_DIACRITIC:
+        return "diacritic"
+    cat = unicodedata.category(ch)[0]
+    return "other-script letter" if cat == "L" else "punctuation or symbol" if cat in "PS" else "other"
+
+
+def _digit_script(ch: str) -> str:
+    cp = ord(ch)
+    return "arabic_indic" if 0x0660 <= cp <= 0x0669 else "extended_arabic_indic" if 0x06F0 <= cp <= 0x06F9 else "ascii"
+
+
+class CharStats:
+    """Accumulates character-level statistics over documents."""
+
+    def __init__(self):
+        self.docs = self.chars = self.tokens = 0
+        self.char_count: Counter = Counter()
+        self.char_docs: Counter = Counter()
+        self.script_letters: Counter = Counter()
+        self.script_docs: Counter = Counter()
+        self.ar_letters = self.diacritics = 0
+        self.events: Counter = Counter()
+        self.event_docs: Counter = Counter()
+        self.docs_latin_ge_5pct = self.docs_latin_ge_20pct = 0
+        self.docs_dia_any = self.docs_dia_ge_5pct = self.docs_dia_ge_20pct = 0
+        self.digit_runs = Counter()
+        self.digit_chars: Counter = Counter()
+        self.digit_docs: Counter = Counter()
+        self.tatweel_runs = 0
+        self.tatweel_prev: Counter = Counter()
+        self.tatweel_next: Counter = Counter()
+        self.tatweel_prev_letter: Counter = Counter()
+        self.tatweel_between: Counter = Counter()       # runs with an Arabic letter on both sides
+        self.tatweel_between_docs: Counter = Counter()
+        self.docs_not_nfc = self.docs_not_nfkc = self.chars_removed_by_nfc = 0
+
+    def add(self, text: str) -> None:
+        self.docs += 1
+        self.chars += len(text)
+        self.tokens += len(text.split())
+        cc = Counter(text)
+        self.char_count.update(cc)
+        self.char_docs.update(cc.keys())
+        scripts: Counter = Counter()
+        cls = [0] * 6
+        digit_kinds = set()
+        for ch, n in cc.items():
+            c, is_letter, script = _char_info(ch)
+            cls[c] += n
+            if is_letter:
+                scripts[script] += n
+            elif ch in _DIGIT_CHARS:
+                kind = _digit_script(ch)
+                self.digit_chars[kind] += n
+                digit_kinds.add(kind)
+        for kind in digit_kinds:
+            self.digit_docs[kind] += 1
+        ar, dia = cls[C_AR_LETTER], cls[C_DIACRITIC]
+        self.ar_letters += ar
+        self.diacritics += dia
+        letters = sum(scripts.values())
+        for s, n in scripts.items():
+            self.script_letters[s] += n
+            self.script_docs[s] += 1
+        if letters:
+            share = scripts["LATIN"] / letters
+            self.docs_latin_ge_5pct += share >= 0.05
+            self.docs_latin_ge_20pct += share >= 0.20
+        if ar + dia:
+            d = dia / (ar + dia)
+            self.docs_dia_any += dia > 0
+            self.docs_dia_ge_5pct += d >= 0.05
+            self.docs_dia_ge_20pct += d >= 0.20
+        for name, rx in _EVENT_RX.items():
+            k = sum(1 for _ in rx.finditer(text))
+            if k:
+                self.events[name] += k
+                self.event_docs[name] += 1
+        if "ـ" in text:  # context of every run of tatweels
+            kinds_in_doc = set()
+            for m in _TATWEEL_RUN.finditer(text):
+                s, e = m.span()
+                prev = text[s - 1] if s else None
+                nxt = text[e] if e < len(text) else None
+                self.tatweel_runs += 1
+                self.tatweel_prev[_ctx_kind(prev)] += 1
+                self.tatweel_next[_ctx_kind(nxt)] += 1
+                if prev is not None and _ctx_kind(prev) == "arabic letter":
+                    self.tatweel_prev_letter[prev] += 1
+                    if _ctx_kind(nxt) == "arabic letter":  # between two Arabic letters
+                        before = text[s - 2] if s > 1 else None
+                        # one-letter clitic (و ب ل ف ك) at the start of a word, joined to the next word
+                        kind = ("clitic_prefix_joined_to_next_word"
+                                if prev in "وبلفك" and _ctx_kind(before) != "arabic letter"
+                                else "inside_a_longer_word")
+                        self.tatweel_between["all"] += 1
+                        self.tatweel_between[kind] += 1
+                        kinds_in_doc.update(("all", kind))
+            for k in kinds_in_doc:
+                self.tatweel_between_docs[k] += 1
+        for m in _DIGIT_RUN.finditer(text):
+            kinds = {_digit_script(c) for c in m.group()}
+            self.digit_runs["mixed_script" if len(kinds) > 1 else next(iter(kinds))] += 1
+        if not unicodedata.is_normalized("NFC", text):
+            self.docs_not_nfc += 1
+            self.chars_removed_by_nfc += len(text) - len(unicodedata.normalize("NFC", text))
+        if not unicodedata.is_normalized("NFKC", text):
+            self.docs_not_nfkc += 1
+
+    def _table(self, items) -> dict:
+        return {f"U+{cp:04X} {label}": {"count": self.char_count.get(chr(cp), 0),
+                                         "docs": self.char_docs.get(chr(cp), 0)}
+                for cp, label in items}
+
+    def _range_total(self, lo: int, hi: int) -> dict:
+        chars = [c for c in self.char_count if lo <= ord(c) <= hi]
+        return {"count": sum(self.char_count[c] for c in chars), "distinct": len(chars)}
+
+    def result(self) -> dict:
+        counts = sorted(self.char_count.values(), reverse=True)
+        total = sum(counts)
+        coverage, cum, k = {}, 0, 0
+        for target in (0.99, 0.999, 0.9999, 0.99999, 1.0):
+            while cum / total < target - 1e-12 and k < len(counts):
+                cum += counts[k]
+                k += 1
+            coverage[f"{target}"] = k
+        other_nd = sum(n for ch, n in self.char_count.items()
+                       if unicodedata.category(ch) == "Nd" and ch not in _DIGIT_CHARS)
+        nfkc_changed = {}
+        for ch, n in self.char_count.items():
+            if unicodedata.normalize("NFKC", ch) != unicodedata.normalize("NFC", ch):
+                nfkc_changed[ch] = n
+        top_nfkc = sorted(nfkc_changed.items(), key=lambda kv: -kv[1])[:10]
+        non_bmp = [c for c in self.char_count if ord(c) > 0xFFFF]
+        ev = lambda name: {"count": self.events[name], "docs": self.event_docs[name]}  # noqa: E731
+        return {
+            "docs": self.docs, "chars": self.chars, "whitespace_tokens": self.tokens,
+            "distinct_chars": len(self.char_count),
+            "chars_occurring_once": sum(1 for n in self.char_count.values() if n == 1),
+            "chars_needed_for_coverage": coverage,
+            "non_bmp": {"occurrences": sum(self.char_count[c] for c in non_bmp), "distinct": len(non_bmp)},
+            "letters_by_script": {s: {"letters": n, "docs": self.script_docs[s]}
+                                  for s, n in self.script_letters.most_common(15)},
+            "latin_share_docs": {"any_latin_letter": self.script_docs["LATIN"],
+                                 "latin_share_ge_5pct": self.docs_latin_ge_5pct,
+                                 "latin_share_ge_20pct": self.docs_latin_ge_20pct},
+            "diacritics": {"pooled_rate_dia_over_arabic_letters_plus_dia":
+                           self.diacritics / (self.ar_letters + self.diacritics)
+                           if (self.ar_letters + self.diacritics) else None,
+                           "arabic_letters": self.ar_letters, "diacritic_chars": self.diacritics,
+                           "docs_with_any": self.docs_dia_any,
+                           "docs_with_density_ge_5pct": self.docs_dia_ge_5pct,
+                           "docs_with_density_ge_20pct": self.docs_dia_ge_20pct,
+                           "by_code_point": self._table(_CP_DIACRITICS),
+                           "quranic_annotation_marks_U+06D6_to_06ED": self._range_total(0x06D6, 0x06ED)},
+            "tatweel_context": {
+                "runs": self.tatweel_runs,
+                "previous_char": dict(sorted(self.tatweel_prev.items())),
+                "next_char": dict(sorted(self.tatweel_next.items())),
+                "previous_arabic_letter_top10": {f"U+{ord(c):04X} {c}": n
+                                                 for c, n in self.tatweel_prev_letter.most_common(10)},
+                "between_two_arabic_letters": {
+                    k: {"runs": self.tatweel_between[k], "docs": self.tatweel_between_docs[k]}
+                    for k in ("all", "clitic_prefix_joined_to_next_word", "inside_a_longer_word")},
+            },
+            "persian_urdu_letters": self._table(_CP_PERSIAN_URDU),
+            "arabic_letter_forms": self._table(_CP_ARABIC_FORMS),
+            "digits": {"occurrences_by_script": {k: self.digit_chars[k] for k in
+                                                 ("ascii", "arabic_indic", "extended_arabic_indic")},
+                       "other_nd_occurrences": other_nd,
+                       "docs_containing_by_script": {k: self.digit_docs[k] for k in
+                                                     ("ascii", "arabic_indic", "extended_arabic_indic")},
+                       "digit_runs_by_script": {k: self.digit_runs[k] for k in
+                                                ("ascii", "arabic_indic", "extended_arabic_indic", "mixed_script")}},
+            "punctuation": self._table(_CP_PUNCTUATION),
+            "invisible_and_space_variants": self._table(_CP_INVISIBLE_AND_SPACES),
+            "presentation_forms": {"arabic_presentation_forms_A_U+FB50_to_FDFF": self._range_total(0xFB50, 0xFDFF),
+                                   "arabic_presentation_forms_B_U+FE70_to_FEFF": self._range_total(0xFE70, 0xFEFF)},
+            "normalization": {"docs_not_nfc": self.docs_not_nfc,
+                              "chars_removed_by_nfc": self.chars_removed_by_nfc,
+                              "docs_not_nfkc": self.docs_not_nfkc,
+                              "chars_changed_by_nfkc_beyond_nfc": sum(nfkc_changed.values()),
+                              "top_nfkc_changed": [{"char": f"U+{ord(c):04X}", "count": n,
+                                                    "nfkc": unicodedata.normalize("NFKC", c)}
+                                                   for c, n in top_nfkc]},
+            "patterns": {name: ev(name) for name in _EVENTS},
+        }
+
+
+def passes_cleaning_wikipedia(stripped: str) -> tuple[bool, list[str]]:
+    """Data Spec steps 4-6 thresholds applied to text after step 3a (boilerplate is web-only)."""
+    reasons = []
+    if len(stripped.split()) < 50:
+        reasons.append("length<50_words")
+    cc = char_counts(stripped)
+    ar, oth, dia, nonl, space, _ = cc
+    letters, nonspace = ar + oth, sum(cc) - space
+    if letters and ar / letters < 0.80:
+        reasons.append("arabic_ratio<0.80")
+    if nonspace and nonl / nonspace > 0.30:
+        reasons.append("nonletter_ratio>0.30")
+    return (not reasons), reasons
+
+
+def run_char_stats(args, names, data_dir, report_dir) -> int:
+    start = time.time()
+    report_dir.mkdir(parents=True, exist_ok=True)
+    print(f"[char-stats] seed={args.seed} sample_size={args.sample_size} candidates={names}", flush=True)
+    paths = {n: download_candidate(n, data_dir) for n in names}
+    rows = {n: footer_rows(paths[n]) for n in names}
+    n_sample = min([args.sample_size] + [sum(rows[n]) for n in names])  # same rule as the main run
+    for n in names:
+        total_rows = sum(rows[n])
+        draw = random.Random(args.seed).sample(range(total_rows), n_sample)  # same draw as process_candidate
+        selected = set(draw)
+        raw, cleaned = CharStats(), CharStats()
+        removed = Counter()
+        first_ids: dict[int, str] = {}
+        first_pos = {g: pos for pos, g in enumerate(draw[: args.read_sample_size])}
+        g = 0
+        t0 = time.time()
+        for path in paths[n]:
+            pf = pq.ParquetFile(path)
+            cols = ["text"] + (["id"] if "id" in pf.schema_arrow.names else [])
+            for batch in pf.iter_batches(batch_size=2000, columns=cols):
+                texts = batch.column("text").to_pylist()
+                ids = batch.column("id").to_pylist() if "id" in cols else [None] * len(texts)
+                for text, doc_id in zip(texts, ids):
+                    if g in selected:
+                        text = text or ""
+                        raw.add(text)
+                        if g in first_pos:
+                            first_ids[first_pos[g]] = str(doc_id)
+                        if n == "wikipedia":  # approximate cleaning view (steps 3a, 4-6)
+                            stripped = strip_trailing_sections(text)
+                            ok, reasons = passes_cleaning_wikipedia(stripped)
+                            if ok:
+                                cleaned.add(stripped)
+                            else:
+                                removed["documents_removed"] += 1
+                                for r in reasons:
+                                    removed[r] += 1
+                    g += 1
+                if g % 200_000 < 2000:
+                    print(f"[char-stats {n}] {g:,}/{total_rows:,} rows  {time.time() - t0:.0f}s", flush=True)
+        assert g == total_rows
+        out = {
+            "sample": {"candidate": n, "seed": args.seed, "sample_size": n_sample,
+                       "total_rows": total_rows,
+                       "ids_of_first_draws": [first_ids[i] for i in sorted(first_ids)]},
+            "views": {"raw": raw.result()},
+        }
+        if n == "wikipedia":
+            out["views"]["cleaned_approx"] = cleaned.result()
+            out["cleaned_approx_definition"] = (
+                "Raw text with trailing sections removed from the first reference-type heading "
+                f"({list(_WIKI_TAIL_HEADINGS)}), then documents dropped if < 50 words, Arabic ratio "
+                "< 0.80, or non-letter ratio > 0.30. Approximates Data Spec steps 3a-6; no NFC, "
+                "markup, whitespace, line-filter or empty-heading rules."
+            )
+            out["cleaned_approx_removed"] = dict(removed)
+        write_text(report_dir / f"char-stats_{n}.json",
+                   json.dumps(out, indent=2, sort_keys=True, ensure_ascii=False) + "\n")
+        print(f"[char-stats {n}] wrote {report_dir / f'char-stats_{n}.json'}", flush=True)
+    print(f"char-stats done (runtime {time.time() - start:.0f}s)", flush=True)
+    return 0
+
+
+# ---------------------------------------------------------------------------
 def parse_args():
     p = argparse.ArgumentParser(
         description="Download candidate corpora, compute Data Spec section 6 quality metrics, "
@@ -521,6 +948,11 @@ def parse_args():
                    help="Word n-gram size for near-duplicate shingles.")
     p.add_argument("--threshold", type=float, default=0.8,
                    help="Jaccard similarity threshold for near-duplicates.")
+    p.add_argument("--char-stats", action="store_true",
+                   help="Instead of the quality metrics, compute character-level statistics "
+                        "(scripts, diacritics, digits, punctuation, fused-word proxies, ...) on the "
+                        "same sample and write char-stats_<candidate>.json to --report-dir. "
+                        "Does not touch metrics or reading-sample files.")
     p.add_argument("--force", action="store_true",
                    help="Overwrite reading-sample files that already contain filled 'Rating:' "
                         "lines (the manual ratings are lost). Without it, such a run is refused "
@@ -536,6 +968,8 @@ def main() -> int:
     if unknown:
         raise SystemExit(f"unknown candidate(s): {unknown}; choose from {list(CANDIDATES)}")
     data_dir, report_dir = Path(args.data_dir), Path(args.report_dir)
+    if args.char_stats:  # separate mode: writes only char-stats_*.json, never the rated files
+        return run_char_stats(args, names, data_dir, report_dir)
 
     # Protect manual ratings: check before any download or computation.
     rated = []

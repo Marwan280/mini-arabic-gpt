@@ -1,0 +1,1681 @@
+{
+  "cleaned_approx_definition": "Raw text with trailing sections removed from the first reference-type heading (['مراجع', 'المراجع', 'مصادر', 'المصادر', 'وصلات خارجية', 'روابط خارجية', 'الوصلات الخارجية', 'انظر أيضا', 'اقرأ أيضا', 'مواضيع ذات صلة', 'معرض صور']), then documents dropped if < 50 words, Arabic ratio < 0.80, or non-letter ratio > 0.30. Approximates Data Spec steps 3a-6; no NFC, markup, whitespace, line-filter or empty-heading rules.",
+  "cleaned_approx_removed": {
+    "arabic_ratio<0.80": 1061,
+    "documents_removed": 30264,
+    "length<50_words": 29858,
+    "nonletter_ratio>0.30": 133
+  },
+  "sample": {
+    "candidate": "wikipedia",
+    "ids_of_first_draws": [
+      "1926026",
+      "331105",
+      "4561470",
+      "3702198",
+      "3494231",
+      "2257638",
+      "1741749",
+      "8609513",
+      "1507336",
+      "6239966",
+      "430938",
+      "405504",
+      "1602299",
+      "3484629",
+      "3514122",
+      "7881453",
+      "350821",
+      "8897903",
+      "3239266",
+      "8602024",
+      "6226014",
+      "3488413",
+      "6581578",
+      "4758112",
+      "60186",
+      "2651572",
+      "6243117",
+      "5524497",
+      "4747142",
+      "2499740",
+      "3461528",
+      "5493301",
+      "1736914",
+      "1588673",
+      "5799019",
+      "1658027",
+      "5667553",
+      "5544709",
+      "4316540",
+      "661173",
+      "6685333",
+      "8426096",
+      "2162460",
+      "5788198",
+      "1410162",
+      "8744294",
+      "5006943",
+      "5683497",
+      "9299776",
+      "3163142",
+      "1197331",
+      "724567",
+      "3504087",
+      "4934023",
+      "1418481",
+      "3514394",
+      "1707823",
+      "5799961",
+      "4748301",
+      "6639855",
+      "5702734",
+      "2666771",
+      "5741320",
+      "5632537",
+      "3391010",
+      "4334372",
+      "1228280",
+      "2794667",
+      "8391954",
+      "3700773",
+      "2669102",
+      "6705058",
+      "5796792",
+      "4481532",
+      "8843971",
+      "3486681",
+      "5390672",
+      "926995",
+      "3506501",
+      "435209",
+      "5337262",
+      "6097307",
+      "4346334",
+      "1125407",
+      "3409767",
+      "9024246",
+      "5333843",
+      "3433741",
+      "7764717",
+      "6045880",
+      "6679568",
+      "2272418",
+      "4321559",
+      "2260053",
+      "3728070",
+      "8900063",
+      "8471991",
+      "4290161",
+      "6295726",
+      "6064909"
+    ],
+    "sample_size": 50000,
+    "seed": 42,
+    "total_rows": 1219201
+  },
+  "views": {
+    "cleaned_approx": {
+      "arabic_letter_forms": {
+        "U+0621 HAMZA": {
+          "count": 114418,
+          "docs": 14434
+        },
+        "U+0622 ALEF WITH MADDA ABOVE": {
+          "count": 39978,
+          "docs": 9786
+        },
+        "U+0623 ALEF WITH HAMZA ABOVE": {
+          "count": 759275,
+          "docs": 19484
+        },
+        "U+0624 WAW WITH HAMZA ABOVE": {
+          "count": 35672,
+          "docs": 9394
+        },
+        "U+0625 ALEF WITH HAMZA BELOW": {
+          "count": 291772,
+          "docs": 18115
+        },
+        "U+0626 YEH WITH HAMZA ABOVE": {
+          "count": 165529,
+          "docs": 16410
+        },
+        "U+0627 ALEF": {
+          "count": 5661191,
+          "docs": 19736
+        },
+        "U+0629 TEH MARBUTA": {
+          "count": 1351157,
+          "docs": 19721
+        },
+        "U+0643 ARABIC KAF": {
+          "count": 858474,
+          "docs": 19670
+        },
+        "U+0647 HEH": {
+          "count": 797206,
+          "docs": 19677
+        },
+        "U+0649 ALEF MAKSURA": {
+          "count": 291472,
+          "docs": 17950
+        },
+        "U+064A ARABIC YEH": {
+          "count": 3205805,
+          "docs": 19736
+        },
+        "U+0671 ALEF WASLA": {
+          "count": 37,
+          "docs": 19
+        }
+      },
+      "chars": 50959907,
+      "chars_needed_for_coverage": {
+        "0.99": 65,
+        "0.999": 118,
+        "0.9999": 400,
+        "0.99999": 1760,
+        "1.0": 2269
+      },
+      "chars_occurring_once": 875,
+      "diacritics": {
+        "arabic_letters": 38938785,
+        "by_code_point": {
+          "U+0640 TATWEEL (not a diacritic; counted as a letter)": {
+            "count": 18387,
+            "docs": 4626
+          },
+          "U+064B FATHATAN": {
+            "count": 127181,
+            "docs": 12666
+          },
+          "U+064C DAMMATAN": {
+            "count": 2392,
+            "docs": 842
+          },
+          "U+064D KASRATAN": {
+            "count": 6739,
+            "docs": 1633
+          },
+          "U+064E FATHA": {
+            "count": 53078,
+            "docs": 3130
+          },
+          "U+064F DAMMA": {
+            "count": 59722,
+            "docs": 7770
+          },
+          "U+0650 KASRA": {
+            "count": 25783,
+            "docs": 3158
+          },
+          "U+0651 SHADDA": {
+            "count": 52872,
+            "docs": 6268
+          },
+          "U+0652 SUKUN": {
+            "count": 10582,
+            "docs": 918
+          },
+          "U+0653 MADDAH ABOVE": {
+            "count": 3,
+            "docs": 2
+          },
+          "U+0654 HAMZA ABOVE MARK": {
+            "count": 8,
+            "docs": 2
+          },
+          "U+0655 HAMZA BELOW MARK": {
+            "count": 1,
+            "docs": 1
+          },
+          "U+0670 SUPERSCRIPT ALEF": {
+            "count": 37,
+            "docs": 14
+          }
+        },
+        "diacritic_chars": 338453,
+        "docs_with_any": 14438,
+        "docs_with_density_ge_20pct": 22,
+        "docs_with_density_ge_5pct": 212,
+        "pooled_rate_dia_over_arabic_letters_plus_dia": 0.008617026482361108,
+        "quranic_annotation_marks_U+06D6_to_06ED": {
+          "count": 40,
+          "distinct": 7
+        }
+      },
+      "digits": {
+        "digit_runs_by_script": {
+          "arabic_indic": 353,
+          "ascii": 429813,
+          "extended_arabic_indic": 12,
+          "mixed_script": 0
+        },
+        "docs_containing_by_script": {
+          "arabic_indic": 76,
+          "ascii": 17907,
+          "extended_arabic_indic": 4
+        },
+        "occurrences_by_script": {
+          "arabic_indic": 1033,
+          "ascii": 1115618,
+          "extended_arabic_indic": 19
+        },
+        "other_nd_occurrences": 9
+      },
+      "distinct_chars": 2269,
+      "docs": 19736,
+      "invisible_and_space_variants": {
+        "U+0009 TAB": {
+          "count": 2632,
+          "docs": 137
+        },
+        "U+00A0 NO-BREAK SPACE": {
+          "count": 12113,
+          "docs": 1762
+        },
+        "U+00AD SOFT HYPHEN": {
+          "count": 4,
+          "docs": 4
+        },
+        "U+061C ARABIC LETTER MARK": {
+          "count": 19,
+          "docs": 5
+        },
+        "U+2002 EN SPACE": {
+          "count": 1,
+          "docs": 1
+        },
+        "U+2003 EM SPACE": {
+          "count": 10,
+          "docs": 2
+        },
+        "U+2009 THIN SPACE": {
+          "count": 6,
+          "docs": 4
+        },
+        "U+200B ZERO WIDTH SPACE": {
+          "count": 5,
+          "docs": 1
+        },
+        "U+200C ZERO WIDTH NON-JOINER": {
+          "count": 317,
+          "docs": 85
+        },
+        "U+200D ZERO WIDTH JOINER": {
+          "count": 64,
+          "docs": 34
+        },
+        "U+200E LEFT-TO-RIGHT MARK": {
+          "count": 2,
+          "docs": 2
+        },
+        "U+200F RIGHT-TO-LEFT MARK": {
+          "count": 0,
+          "docs": 0
+        },
+        "U+202A LRE": {
+          "count": 0,
+          "docs": 0
+        },
+        "U+202B RLE": {
+          "count": 0,
+          "docs": 0
+        },
+        "U+202C PDF": {
+          "count": 0,
+          "docs": 0
+        },
+        "U+202D LRO": {
+          "count": 0,
+          "docs": 0
+        },
+        "U+202E RLO": {
+          "count": 0,
+          "docs": 0
+        },
+        "U+202F NARROW NO-BREAK SPACE": {
+          "count": 7,
+          "docs": 4
+        },
+        "U+2066 LRI": {
+          "count": 0,
+          "docs": 0
+        },
+        "U+2067 RLI": {
+          "count": 0,
+          "docs": 0
+        },
+        "U+2068 FSI": {
+          "count": 0,
+          "docs": 0
+        },
+        "U+2069 PDI": {
+          "count": 2,
+          "docs": 1
+        },
+        "U+FEFF ZERO WIDTH NO-BREAK SPACE / BOM": {
+          "count": 0,
+          "docs": 0
+        }
+      },
+      "latin_share_docs": {
+        "any_latin_letter": 7099,
+        "latin_share_ge_20pct": 0,
+        "latin_share_ge_5pct": 1320
+      },
+      "letters_by_script": {
+        "ARABIC": {
+          "docs": 19736,
+          "letters": 38938786
+        },
+        "ARMENIAN": {
+          "docs": 18,
+          "letters": 353
+        },
+        "CJK": {
+          "docs": 183,
+          "letters": 1733
+        },
+        "CYRILLIC": {
+          "docs": 125,
+          "letters": 3291
+        },
+        "DEVANAGARI": {
+          "docs": 23,
+          "letters": 153
+        },
+        "GEORGIAN": {
+          "docs": 6,
+          "letters": 123
+        },
+        "GREEK": {
+          "docs": 247,
+          "letters": 2095
+        },
+        "HANGUL": {
+          "docs": 73,
+          "letters": 1321
+        },
+        "HEBREW": {
+          "docs": 62,
+          "letters": 1087
+        },
+        "HIRAGANA": {
+          "docs": 25,
+          "letters": 120
+        },
+        "KATAKANA": {
+          "docs": 37,
+          "letters": 236
+        },
+        "LATIN": {
+          "docs": 7099,
+          "letters": 416843
+        },
+        "MODIFIER": {
+          "docs": 36,
+          "letters": 78
+        },
+        "THAI": {
+          "docs": 5,
+          "letters": 85
+        },
+        "TIFINAGH": {
+          "docs": 14,
+          "letters": 172
+        }
+      },
+      "non_bmp": {
+        "distinct": 33,
+        "occurrences": 79
+      },
+      "normalization": {
+        "chars_changed_by_nfkc_beyond_nfc": 12982,
+        "chars_removed_by_nfc": 0,
+        "docs_not_nfc": 0,
+        "docs_not_nfkc": 2356,
+        "top_nfkc_changed": [
+          {
+            "char": "U+00A0",
+            "count": 12113,
+            "nfkc": " "
+          },
+          {
+            "char": "U+00B2",
+            "count": 564,
+            "nfkc": "2"
+          },
+          {
+            "char": "U+2026",
+            "count": 102,
+            "nfkc": "..."
+          },
+          {
+            "char": "U+00B3",
+            "count": 23,
+            "nfkc": "3"
+          },
+          {
+            "char": "U+2033",
+            "count": 17,
+            "nfkc": "′′"
+          },
+          {
+            "char": "U+00A8",
+            "count": 14,
+            "nfkc": " ̈"
+          },
+          {
+            "char": "U+FF5E",
+            "count": 12,
+            "nfkc": "~"
+          },
+          {
+            "char": "U+2003",
+            "count": 10,
+            "nfkc": " "
+          },
+          {
+            "char": "U+02DB",
+            "count": 9,
+            "nfkc": " ̨"
+          },
+          {
+            "char": "U+202F",
+            "count": 7,
+            "nfkc": " "
+          }
+        ]
+      },
+      "patterns": {
+        "arabic_letter_adjacent_to_latin_letter": {
+          "count": 1582,
+          "docs": 629
+        },
+        "arabic_letter_run_ge_15": {
+          "count": 859,
+          "docs": 466
+        },
+        "arabic_letter_run_ge_20": {
+          "count": 29,
+          "docs": 20
+        },
+        "arabic_letter_run_ge_25": {
+          "count": 5,
+          "docs": 4
+        },
+        "arabic_letter_then_digit": {
+          "count": 15667,
+          "docs": 4437
+        },
+        "arabic_punct_arabic_no_space": {
+          "count": 3090,
+          "docs": 1376
+        },
+        "ascii_thousands_separator_number": {
+          "count": 12946,
+          "docs": 2659
+        },
+        "decimal_point_number": {
+          "count": 51348,
+          "docs": 4021
+        },
+        "digit_run_ge_8": {
+          "count": 203,
+          "docs": 88
+        },
+        "digit_then_arabic_letter": {
+          "count": 10502,
+          "docs": 2624
+        },
+        "digit_then_era_marker_m_or_hijri": {
+          "count": 8760,
+          "docs": 1637
+        },
+        "double_space_inside_line": {
+          "count": 29606,
+          "docs": 9890
+        },
+        "empty_brackets": {
+          "count": 440,
+          "docs": 209
+        },
+        "float_artifact_ge_8_decimals": {
+          "count": 32,
+          "docs": 32
+        },
+        "html_tag": {
+          "count": 342,
+          "docs": 126
+        },
+        "latin_words_ge_2_letters": {
+          "count": 76067,
+          "docs": 6799
+        },
+        "parenthesized_latin_phrase": {
+          "count": 12160,
+          "docs": 4209
+        },
+        "repeated_arabic_letter_run_ge_4": {
+          "count": 2,
+          "docs": 2
+        },
+        "single_letter_prefix_then_digit": {
+          "count": 11753,
+          "docs": 3570
+        },
+        "space_before_punctuation": {
+          "count": 35698,
+          "docs": 7672
+        },
+        "tatweel_after_heh": {
+          "count": 4999,
+          "docs": 1061
+        },
+        "tatweel_before_digit_or_latin": {
+          "count": 1774,
+          "docs": 862
+        },
+        "tatweel_between_letters": {
+          "count": 3097,
+          "docs": 627
+        },
+        "tatweel_run_ge_2": {
+          "count": 808,
+          "docs": 163
+        },
+        "url": {
+          "count": 157,
+          "docs": 85
+        }
+      },
+      "persian_urdu_letters": {
+        "U+0679 TTEH": {
+          "count": 11,
+          "docs": 5
+        },
+        "U+067E PEH": {
+          "count": 365,
+          "docs": 108
+        },
+        "U+0686 TCHEH": {
+          "count": 109,
+          "docs": 53
+        },
+        "U+0698 JEH": {
+          "count": 10,
+          "docs": 9
+        },
+        "U+06A4 VEH": {
+          "count": 307,
+          "docs": 112
+        },
+        "U+06A9 KEHEH": {
+          "count": 329,
+          "docs": 88
+        },
+        "U+06AF GAF": {
+          "count": 539,
+          "docs": 112
+        },
+        "U+06BE HEH DOACHASHMEE": {
+          "count": 111,
+          "docs": 27
+        },
+        "U+06C0 HEH WITH YEH ABOVE": {
+          "count": 1,
+          "docs": 1
+        },
+        "U+06C1 HEH GOAL": {
+          "count": 12,
+          "docs": 10
+        },
+        "U+06CC FARSI YEH": {
+          "count": 1472,
+          "docs": 185
+        },
+        "U+06D2 YEH BARREE": {
+          "count": 6,
+          "docs": 4
+        }
+      },
+      "presentation_forms": {
+        "arabic_presentation_forms_A_U+FB50_to_FDFF": {
+          "count": 113,
+          "distinct": 2
+        },
+        "arabic_presentation_forms_B_U+FE70_to_FEFF": {
+          "count": 0,
+          "distinct": 0
+        }
+      },
+      "punctuation": {
+        "U+0021 EXCLAMATION MARK": {
+          "count": 1145,
+          "docs": 401
+        },
+        "U+0022 QUOTATION MARK": {
+          "count": 13924,
+          "docs": 2231
+        },
+        "U+0025 PERCENT SIGN": {
+          "count": 36461,
+          "docs": 1911
+        },
+        "U+0027 APOSTROPHE": {
+          "count": 2077,
+          "docs": 704
+        },
+        "U+0028 LEFT PARENTHESIS": {
+          "count": 84938,
+          "docs": 14251
+        },
+        "U+0029 RIGHT PARENTHESIS": {
+          "count": 84780,
+          "docs": 14236
+        },
+        "U+002C COMMA": {
+          "count": 18812,
+          "docs": 3908
+        },
+        "U+002D HYPHEN-MINUS": {
+          "count": 42571,
+          "docs": 8065
+        },
+        "U+002E FULL STOP": {
+          "count": 428364,
+          "docs": 19645
+        },
+        "U+002F SOLIDUS": {
+          "count": 11975,
+          "docs": 3346
+        },
+        "U+003A COLON": {
+          "count": 51451,
+          "docs": 9110
+        },
+        "U+003B SEMICOLON": {
+          "count": 572,
+          "docs": 192
+        },
+        "U+003F QUESTION MARK": {
+          "count": 113,
+          "docs": 53
+        },
+        "U+005B LEFT BRACKET": {
+          "count": 1740,
+          "docs": 622
+        },
+        "U+005D RIGHT BRACKET": {
+          "count": 1733,
+          "docs": 622
+        },
+        "U+007B LEFT BRACE": {
+          "count": 325,
+          "docs": 163
+        },
+        "U+007C VERTICAL LINE": {
+          "count": 3889,
+          "docs": 208
+        },
+        "U+007D RIGHT BRACE": {
+          "count": 395,
+          "docs": 190
+        },
+        "U+00AB LEFT GUILLEMET": {
+          "count": 37487,
+          "docs": 6330
+        },
+        "U+00B7 MIDDLE DOT": {
+          "count": 258,
+          "docs": 32
+        },
+        "U+00BB RIGHT GUILLEMET": {
+          "count": 37472,
+          "docs": 6329
+        },
+        "U+060C ARABIC COMMA": {
+          "count": 398793,
+          "docs": 18469
+        },
+        "U+061B ARABIC SEMICOLON": {
+          "count": 9326,
+          "docs": 3696
+        },
+        "U+061F ARABIC QUESTION MARK": {
+          "count": 1345,
+          "docs": 586
+        },
+        "U+066A ARABIC PERCENT SIGN": {
+          "count": 2304,
+          "docs": 563
+        },
+        "U+066B ARABIC DECIMAL SEPARATOR": {
+          "count": 31,
+          "docs": 8
+        },
+        "U+066C ARABIC THOUSANDS SEPARATOR": {
+          "count": 138,
+          "docs": 30
+        },
+        "U+066D ARABIC FIVE POINTED STAR": {
+          "count": 1,
+          "docs": 1
+        },
+        "U+06D4 ARABIC FULL STOP (Urdu)": {
+          "count": 0,
+          "docs": 0
+        },
+        "U+2010 HYPHEN": {
+          "count": 0,
+          "docs": 0
+        },
+        "U+2011 NON-BREAKING HYPHEN": {
+          "count": 6,
+          "docs": 1
+        },
+        "U+2012 FIGURE DASH": {
+          "count": 0,
+          "docs": 0
+        },
+        "U+2013 EN DASH": {
+          "count": 12276,
+          "docs": 2250
+        },
+        "U+2014 EM DASH": {
+          "count": 337,
+          "docs": 126
+        },
+        "U+2015 HORIZONTAL BAR": {
+          "count": 4,
+          "docs": 2
+        },
+        "U+2018 LEFT SINGLE QUOTE": {
+          "count": 110,
+          "docs": 33
+        },
+        "U+2019 RIGHT SINGLE QUOTE": {
+          "count": 177,
+          "docs": 77
+        },
+        "U+201A SINGLE LOW-9 QUOTE": {
+          "count": 5,
+          "docs": 1
+        },
+        "U+201C LEFT DOUBLE QUOTE": {
+          "count": 668,
+          "docs": 230
+        },
+        "U+201D RIGHT DOUBLE QUOTE": {
+          "count": 935,
+          "docs": 232
+        },
+        "U+201E DOUBLE LOW-9 QUOTE": {
+          "count": 6,
+          "docs": 6
+        },
+        "U+2022 BULLET": {
+          "count": 1344,
+          "docs": 93
+        },
+        "U+2026 ELLIPSIS": {
+          "count": 102,
+          "docs": 55
+        },
+        "U+2039 SINGLE LEFT ANGLE QUOTE": {
+          "count": 117,
+          "docs": 7
+        },
+        "U+203A SINGLE RIGHT ANGLE QUOTE": {
+          "count": 116,
+          "docs": 8
+        },
+        "U+2212 MINUS SIGN": {
+          "count": 156,
+          "docs": 65
+        },
+        "U+FD3E ORNATE LEFT PARENTHESIS": {
+          "count": 57,
+          "docs": 15
+        },
+        "U+FD3F ORNATE RIGHT PARENTHESIS": {
+          "count": 56,
+          "docs": 14
+        }
+      },
+      "tatweel_context": {
+        "between_two_arabic_letters": {
+          "all": {
+            "docs": 627,
+            "runs": 3310
+          },
+          "clitic_prefix_joined_to_next_word": {
+            "docs": 387,
+            "runs": 639
+          },
+          "inside_a_longer_word": {
+            "docs": 303,
+            "runs": 2671
+          }
+        },
+        "next_char": {
+          "arabic letter": 3502,
+          "diacritic": 241,
+          "digit": 1591,
+          "newline": 152,
+          "other": 5,
+          "other-script letter": 183,
+          "punctuation or symbol": 3063,
+          "space": 8118,
+          "text boundary": 5
+        },
+        "previous_arabic_letter_top10": {
+          "U+0628 ب": 4024,
+          "U+062A ت": 166,
+          "U+0639 ع": 187,
+          "U+0641 ف": 177,
+          "U+0643 ك": 278,
+          "U+0644 ل": 3867,
+          "U+0645 م": 310,
+          "U+0646 ن": 236,
+          "U+0647 ه": 4999,
+          "U+064A ي": 365
+        },
+        "previous_char": {
+          "arabic letter": 15518,
+          "diacritic": 225,
+          "digit": 60,
+          "newline": 25,
+          "other": 5,
+          "punctuation or symbol": 32,
+          "space": 995
+        },
+        "runs": 16860
+      },
+      "whitespace_tokens": 8491335
+    },
+    "raw": {
+      "arabic_letter_forms": {
+        "U+0621 HAMZA": {
+          "count": 141734,
+          "docs": 24301
+        },
+        "U+0622 ALEF WITH MADDA ABOVE": {
+          "count": 49587,
+          "docs": 13875
+        },
+        "U+0623 ALEF WITH HAMZA ABOVE": {
+          "count": 1006748,
+          "docs": 46086
+        },
+        "U+0624 WAW WITH HAMZA ABOVE": {
+          "count": 40465,
+          "docs": 11592
+        },
+        "U+0625 ALEF WITH HAMZA BELOW": {
+          "count": 360773,
+          "docs": 35455
+        },
+        "U+0626 YEH WITH HAMZA ABOVE": {
+          "count": 204200,
+          "docs": 28217
+        },
+        "U+0627 ALEF": {
+          "count": 7242707,
+          "docs": 49783
+        },
+        "U+0629 TEH MARBUTA": {
+          "count": 1785170,
+          "docs": 48765
+        },
+        "U+0643 ARABIC KAF": {
+          "count": 1174398,
+          "docs": 47813
+        },
+        "U+0647 HEH": {
+          "count": 922319,
+          "docs": 48621
+        },
+        "U+0649 ALEF MAKSURA": {
+          "count": 328160,
+          "docs": 32965
+        },
+        "U+064A ARABIC YEH": {
+          "count": 4434768,
+          "docs": 49989
+        },
+        "U+0671 ALEF WASLA": {
+          "count": 39,
+          "docs": 20
+        }
+      },
+      "chars": 67593264,
+      "chars_needed_for_coverage": {
+        "0.99": 77,
+        "0.999": 126,
+        "0.9999": 483,
+        "0.99999": 1961,
+        "1.0": 2636
+      },
+      "chars_occurring_once": 935,
+      "diacritics": {
+        "arabic_letters": 50575117,
+        "by_code_point": {
+          "U+0640 TATWEEL (not a diacritic; counted as a letter)": {
+            "count": 24773,
+            "docs": 9050
+          },
+          "U+064B FATHATAN": {
+            "count": 138003,
+            "docs": 18855
+          },
+          "U+064C DAMMATAN": {
+            "count": 2613,
+            "docs": 980
+          },
+          "U+064D KASRATAN": {
+            "count": 6830,
+            "docs": 1696
+          },
+          "U+064E FATHA": {
+            "count": 57618,
+            "docs": 5098
+          },
+          "U+064F DAMMA": {
+            "count": 63880,
+            "docs": 10410
+          },
+          "U+0650 KASRA": {
+            "count": 27478,
+            "docs": 3776
+          },
+          "U+0651 SHADDA": {
+            "count": 57734,
+            "docs": 8408
+          },
+          "U+0652 SUKUN": {
+            "count": 10938,
+            "docs": 1139
+          },
+          "U+0653 MADDAH ABOVE": {
+            "count": 3,
+            "docs": 2
+          },
+          "U+0654 HAMZA ABOVE MARK": {
+            "count": 8,
+            "docs": 2
+          },
+          "U+0655 HAMZA BELOW MARK": {
+            "count": 2,
+            "docs": 2
+          },
+          "U+0670 SUPERSCRIPT ALEF": {
+            "count": 38,
+            "docs": 15
+          }
+        },
+        "diacritic_chars": 365200,
+        "docs_with_any": 23282,
+        "docs_with_density_ge_20pct": 70,
+        "docs_with_density_ge_5pct": 303,
+        "pooled_rate_dia_over_arabic_letters_plus_dia": 0.00716917407482957,
+        "quranic_annotation_marks_U+06D6_to_06ED": {
+          "count": 40,
+          "distinct": 7
+        }
+      },
+      "digits": {
+        "digit_runs_by_script": {
+          "arabic_indic": 376,
+          "ascii": 652987,
+          "extended_arabic_indic": 16,
+          "mixed_script": 0
+        },
+        "docs_containing_by_script": {
+          "arabic_indic": 87,
+          "ascii": 44474,
+          "extended_arabic_indic": 5
+        },
+        "occurrences_by_script": {
+          "arabic_indic": 1102,
+          "ascii": 1793560,
+          "extended_arabic_indic": 35
+        },
+        "other_nd_occurrences": 11
+      },
+      "distinct_chars": 2636,
+      "docs": 50000,
+      "invisible_and_space_variants": {
+        "U+0009 TAB": {
+          "count": 3814,
+          "docs": 285
+        },
+        "U+00A0 NO-BREAK SPACE": {
+          "count": 15087,
+          "docs": 2436
+        },
+        "U+00AD SOFT HYPHEN": {
+          "count": 4,
+          "docs": 4
+        },
+        "U+061C ARABIC LETTER MARK": {
+          "count": 19,
+          "docs": 5
+        },
+        "U+2002 EN SPACE": {
+          "count": 1,
+          "docs": 1
+        },
+        "U+2003 EM SPACE": {
+          "count": 10,
+          "docs": 2
+        },
+        "U+2009 THIN SPACE": {
+          "count": 15,
+          "docs": 6
+        },
+        "U+200B ZERO WIDTH SPACE": {
+          "count": 5,
+          "docs": 1
+        },
+        "U+200C ZERO WIDTH NON-JOINER": {
+          "count": 520,
+          "docs": 266
+        },
+        "U+200D ZERO WIDTH JOINER": {
+          "count": 71,
+          "docs": 41
+        },
+        "U+200E LEFT-TO-RIGHT MARK": {
+          "count": 2,
+          "docs": 2
+        },
+        "U+200F RIGHT-TO-LEFT MARK": {
+          "count": 0,
+          "docs": 0
+        },
+        "U+202A LRE": {
+          "count": 0,
+          "docs": 0
+        },
+        "U+202B RLE": {
+          "count": 0,
+          "docs": 0
+        },
+        "U+202C PDF": {
+          "count": 0,
+          "docs": 0
+        },
+        "U+202D LRO": {
+          "count": 0,
+          "docs": 0
+        },
+        "U+202E RLO": {
+          "count": 0,
+          "docs": 0
+        },
+        "U+202F NARROW NO-BREAK SPACE": {
+          "count": 7,
+          "docs": 4
+        },
+        "U+2066 LRI": {
+          "count": 0,
+          "docs": 0
+        },
+        "U+2067 RLI": {
+          "count": 0,
+          "docs": 0
+        },
+        "U+2068 FSI": {
+          "count": 0,
+          "docs": 0
+        },
+        "U+2069 PDI": {
+          "count": 2,
+          "docs": 1
+        },
+        "U+FEFF ZERO WIDTH NO-BREAK SPACE / BOM": {
+          "count": 3,
+          "docs": 1
+        }
+      },
+      "latin_share_docs": {
+        "any_latin_letter": 12126,
+        "latin_share_ge_20pct": 1013,
+        "latin_share_ge_5pct": 4535
+      },
+      "letters_by_script": {
+        "ARABIC": {
+          "docs": 50000,
+          "letters": 50575119
+        },
+        "ARMENIAN": {
+          "docs": 27,
+          "letters": 804
+        },
+        "CJK": {
+          "docs": 352,
+          "letters": 2498
+        },
+        "CYRILLIC": {
+          "docs": 184,
+          "letters": 8129
+        },
+        "DEVANAGARI": {
+          "docs": 36,
+          "letters": 464
+        },
+        "GEORGIAN": {
+          "docs": 8,
+          "letters": 134
+        },
+        "GREEK": {
+          "docs": 324,
+          "letters": 2810
+        },
+        "HANGUL": {
+          "docs": 81,
+          "letters": 1768
+        },
+        "HEBREW": {
+          "docs": 72,
+          "letters": 1201
+        },
+        "HIRAGANA": {
+          "docs": 153,
+          "letters": 950
+        },
+        "KATAKANA": {
+          "docs": 51,
+          "letters": 425
+        },
+        "LATIN": {
+          "docs": 12126,
+          "letters": 1343065
+        },
+        "MODIFIER": {
+          "docs": 40,
+          "letters": 83
+        },
+        "THAI": {
+          "docs": 6,
+          "letters": 95
+        },
+        "TIFINAGH": {
+          "docs": 14,
+          "letters": 172
+        }
+      },
+      "non_bmp": {
+        "distinct": 33,
+        "occurrences": 79
+      },
+      "normalization": {
+        "chars_changed_by_nfkc_beyond_nfc": 16399,
+        "chars_removed_by_nfc": 1,
+        "docs_not_nfc": 1,
+        "docs_not_nfkc": 3318,
+        "top_nfkc_changed": [
+          {
+            "char": "U+00A0",
+            "count": 15087,
+            "nfkc": " "
+          },
+          {
+            "char": "U+00B2",
+            "count": 868,
+            "nfkc": "2"
+          },
+          {
+            "char": "U+2026",
+            "count": 110,
+            "nfkc": "..."
+          },
+          {
+            "char": "U+00BD",
+            "count": 77,
+            "nfkc": "1⁄2"
+          },
+          {
+            "char": "U+2116",
+            "count": 24,
+            "nfkc": "No"
+          },
+          {
+            "char": "U+00B3",
+            "count": 23,
+            "nfkc": "3"
+          },
+          {
+            "char": "U+2033",
+            "count": 23,
+            "nfkc": "′′"
+          },
+          {
+            "char": "U+2009",
+            "count": 15,
+            "nfkc": " "
+          },
+          {
+            "char": "U+FF5E",
+            "count": 15,
+            "nfkc": "~"
+          },
+          {
+            "char": "U+00A8",
+            "count": 14,
+            "nfkc": " ̈"
+          }
+        ]
+      },
+      "patterns": {
+        "arabic_letter_adjacent_to_latin_letter": {
+          "count": 1705,
+          "docs": 702
+        },
+        "arabic_letter_run_ge_15": {
+          "count": 978,
+          "docs": 541
+        },
+        "arabic_letter_run_ge_20": {
+          "count": 31,
+          "docs": 22
+        },
+        "arabic_letter_run_ge_25": {
+          "count": 6,
+          "docs": 5
+        },
+        "arabic_letter_then_digit": {
+          "count": 16677,
+          "docs": 5213
+        },
+        "arabic_punct_arabic_no_space": {
+          "count": 3424,
+          "docs": 1601
+        },
+        "ascii_thousands_separator_number": {
+          "count": 13768,
+          "docs": 3306
+        },
+        "decimal_point_number": {
+          "count": 53516,
+          "docs": 4654
+        },
+        "digit_run_ge_8": {
+          "count": 564,
+          "docs": 317
+        },
+        "digit_then_arabic_letter": {
+          "count": 11137,
+          "docs": 2914
+        },
+        "digit_then_era_marker_m_or_hijri": {
+          "count": 9271,
+          "docs": 1864
+        },
+        "double_space_inside_line": {
+          "count": 64352,
+          "docs": 29400
+        },
+        "empty_brackets": {
+          "count": 570,
+          "docs": 286
+        },
+        "float_artifact_ge_8_decimals": {
+          "count": 33,
+          "docs": 33
+        },
+        "html_tag": {
+          "count": 830,
+          "docs": 203
+        },
+        "latin_words_ge_2_letters": {
+          "count": 233540,
+          "docs": 11804
+        },
+        "parenthesized_latin_phrase": {
+          "count": 17162,
+          "docs": 5917
+        },
+        "repeated_arabic_letter_run_ge_4": {
+          "count": 2,
+          "docs": 2
+        },
+        "single_letter_prefix_then_digit": {
+          "count": 12193,
+          "docs": 3927
+        },
+        "space_before_punctuation": {
+          "count": 44253,
+          "docs": 12283
+        },
+        "tatweel_after_heh": {
+          "count": 7890,
+          "docs": 2554
+        },
+        "tatweel_before_digit_or_latin": {
+          "count": 1835,
+          "docs": 913
+        },
+        "tatweel_between_letters": {
+          "count": 3264,
+          "docs": 759
+        },
+        "tatweel_run_ge_2": {
+          "count": 827,
+          "docs": 178
+        },
+        "url": {
+          "count": 1015,
+          "docs": 528
+        }
+      },
+      "persian_urdu_letters": {
+        "U+0679 TTEH": {
+          "count": 11,
+          "docs": 5
+        },
+        "U+067E PEH": {
+          "count": 427,
+          "docs": 131
+        },
+        "U+0686 TCHEH": {
+          "count": 156,
+          "docs": 62
+        },
+        "U+0698 JEH": {
+          "count": 13,
+          "docs": 12
+        },
+        "U+06A4 VEH": {
+          "count": 416,
+          "docs": 169
+        },
+        "U+06A9 KEHEH": {
+          "count": 483,
+          "docs": 171
+        },
+        "U+06AF GAF": {
+          "count": 634,
+          "docs": 135
+        },
+        "U+06BE HEH DOACHASHMEE": {
+          "count": 116,
+          "docs": 31
+        },
+        "U+06C0 HEH WITH YEH ABOVE": {
+          "count": 1,
+          "docs": 1
+        },
+        "U+06C1 HEH GOAL": {
+          "count": 14,
+          "docs": 12
+        },
+        "U+06CC FARSI YEH": {
+          "count": 2130,
+          "docs": 476
+        },
+        "U+06D2 YEH BARREE": {
+          "count": 9,
+          "docs": 5
+        }
+      },
+      "presentation_forms": {
+        "arabic_presentation_forms_A_U+FB50_to_FDFF": {
+          "count": 113,
+          "distinct": 2
+        },
+        "arabic_presentation_forms_B_U+FE70_to_FEFF": {
+          "count": 3,
+          "distinct": 1
+        }
+      },
+      "punctuation": {
+        "U+0021 EXCLAMATION MARK": {
+          "count": 2047,
+          "docs": 495
+        },
+        "U+0022 QUOTATION MARK": {
+          "count": 22410,
+          "docs": 2708
+        },
+        "U+0025 PERCENT SIGN": {
+          "count": 37234,
+          "docs": 1951
+        },
+        "U+0027 APOSTROPHE": {
+          "count": 4151,
+          "docs": 1253
+        },
+        "U+0028 LEFT PARENTHESIS": {
+          "count": 119150,
+          "docs": 29422
+        },
+        "U+0029 RIGHT PARENTHESIS": {
+          "count": 118970,
+          "docs": 29408
+        },
+        "U+002C COMMA": {
+          "count": 39455,
+          "docs": 5545
+        },
+        "U+002D HYPHEN-MINUS": {
+          "count": 65236,
+          "docs": 13239
+        },
+        "U+002E FULL STOP": {
+          "count": 508112,
+          "docs": 48911
+        },
+        "U+002F SOLIDUS": {
+          "count": 16780,
+          "docs": 4110
+        },
+        "U+003A COLON": {
+          "count": 67163,
+          "docs": 13945
+        },
+        "U+003B SEMICOLON": {
+          "count": 2849,
+          "docs": 398
+        },
+        "U+003F QUESTION MARK": {
+          "count": 357,
+          "docs": 192
+        },
+        "U+005B LEFT BRACKET": {
+          "count": 1944,
+          "docs": 701
+        },
+        "U+005D RIGHT BRACKET": {
+          "count": 1942,
+          "docs": 705
+        },
+        "U+007B LEFT BRACE": {
+          "count": 465,
+          "docs": 235
+        },
+        "U+007C VERTICAL LINE": {
+          "count": 78375,
+          "docs": 370
+        },
+        "U+007D RIGHT BRACE": {
+          "count": 632,
+          "docs": 289
+        },
+        "U+00AB LEFT GUILLEMET": {
+          "count": 39430,
+          "docs": 7350
+        },
+        "U+00B7 MIDDLE DOT": {
+          "count": 264,
+          "docs": 35
+        },
+        "U+00BB RIGHT GUILLEMET": {
+          "count": 39418,
+          "docs": 7351
+        },
+        "U+060C ARABIC COMMA": {
+          "count": 443670,
+          "docs": 39945
+        },
+        "U+061B ARABIC SEMICOLON": {
+          "count": 10521,
+          "docs": 4745
+        },
+        "U+061F ARABIC QUESTION MARK": {
+          "count": 1447,
+          "docs": 642
+        },
+        "U+066A ARABIC PERCENT SIGN": {
+          "count": 2361,
+          "docs": 574
+        },
+        "U+066B ARABIC DECIMAL SEPARATOR": {
+          "count": 82,
+          "docs": 32
+        },
+        "U+066C ARABIC THOUSANDS SEPARATOR": {
+          "count": 226,
+          "docs": 81
+        },
+        "U+066D ARABIC FIVE POINTED STAR": {
+          "count": 1,
+          "docs": 1
+        },
+        "U+06D4 ARABIC FULL STOP (Urdu)": {
+          "count": 1,
+          "docs": 1
+        },
+        "U+2010 HYPHEN": {
+          "count": 3,
+          "docs": 3
+        },
+        "U+2011 NON-BREAKING HYPHEN": {
+          "count": 6,
+          "docs": 1
+        },
+        "U+2012 FIGURE DASH": {
+          "count": 0,
+          "docs": 0
+        },
+        "U+2013 EN DASH": {
+          "count": 17314,
+          "docs": 4340
+        },
+        "U+2014 EM DASH": {
+          "count": 4519,
+          "docs": 204
+        },
+        "U+2015 HORIZONTAL BAR": {
+          "count": 4,
+          "docs": 2
+        },
+        "U+2018 LEFT SINGLE QUOTE": {
+          "count": 116,
+          "docs": 39
+        },
+        "U+2019 RIGHT SINGLE QUOTE": {
+          "count": 308,
+          "docs": 132
+        },
+        "U+201A SINGLE LOW-9 QUOTE": {
+          "count": 5,
+          "docs": 1
+        },
+        "U+201C LEFT DOUBLE QUOTE": {
+          "count": 765,
+          "docs": 273
+        },
+        "U+201D RIGHT DOUBLE QUOTE": {
+          "count": 1025,
+          "docs": 268
+        },
+        "U+201E DOUBLE LOW-9 QUOTE": {
+          "count": 9,
+          "docs": 9
+        },
+        "U+2022 BULLET": {
+          "count": 1427,
+          "docs": 107
+        },
+        "U+2026 ELLIPSIS": {
+          "count": 110,
+          "docs": 61
+        },
+        "U+2039 SINGLE LEFT ANGLE QUOTE": {
+          "count": 118,
+          "docs": 7
+        },
+        "U+203A SINGLE RIGHT ANGLE QUOTE": {
+          "count": 117,
+          "docs": 8
+        },
+        "U+2212 MINUS SIGN": {
+          "count": 184,
+          "docs": 67
+        },
+        "U+FD3E ORNATE LEFT PARENTHESIS": {
+          "count": 57,
+          "docs": 15
+        },
+        "U+FD3F ORNATE RIGHT PARENTHESIS": {
+          "count": 56,
+          "docs": 14
+        }
+      },
+      "tatweel_context": {
+        "between_two_arabic_letters": {
+          "all": {
+            "docs": 759,
+            "runs": 3482
+          },
+          "clitic_prefix_joined_to_next_word": {
+            "docs": 464,
+            "runs": 721
+          },
+          "inside_a_longer_word": {
+            "docs": 360,
+            "runs": 2761
+          }
+        },
+        "next_char": {
+          "arabic letter": 3686,
+          "diacritic": 247,
+          "digit": 1639,
+          "newline": 2508,
+          "other": 5,
+          "other-script letter": 196,
+          "punctuation or symbol": 3205,
+          "space": 11488,
+          "text boundary": 252
+        },
+        "previous_arabic_letter_top10": {
+          "U+0628 ب": 6806,
+          "U+062A ت": 178,
+          "U+0639 ع": 188,
+          "U+0641 ف": 194,
+          "U+0643 ك": 286,
+          "U+0644 ل": 4236,
+          "U+0645 م": 317,
+          "U+0646 ن": 242,
+          "U+0647 ه": 7890,
+          "U+064A ي": 374
+        },
+        "previous_char": {
+          "arabic letter": 21661,
+          "diacritic": 234,
+          "digit": 61,
+          "newline": 27,
+          "other": 6,
+          "punctuation or symbol": 33,
+          "space": 1204
+        },
+        "runs": 23226
+      },
+      "whitespace_tokens": 11173499
+    }
+  }
+}
