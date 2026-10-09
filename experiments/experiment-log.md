@@ -84,3 +84,16 @@ Copy this block for each new entry. Use the next free ID. Dates are ISO (YYYY-MM
 - **Root cause:** The memory plan covered training only. Evaluation was assumed to be cheap because it has no backward pass, but the logits and their `float32` copy dominate memory at this vocabulary size.
 - **Fix:** The evaluation batch is fixed at 8 (`docs/06-training-plan.md` §4.6, §4.7) and `torch.cuda.empty_cache()` runs after each evaluation. The pilot's losses were not affected and were kept; the throughput figures come from the benchmark.
 - **Lesson:** Budget memory for evaluation as well as training, and read the reserved-memory figure of every run, not only the loss.
+
+### EXP-007: Two of the prototype tests were wrong on their first run
+
+- **ID:** EXP-007
+- **Date:** 2026-10-09
+- **Stage:** Testing strategy (prototype of the tests and of the bug injections for `docs/08-testing-strategy.md`; scratchpad code)
+- **What happened:** Two tests I wrote did not test what they claimed.
+  1. `test_initial_loss_near_ln_vocab` used the same tensor as inputs and targets. On correct code it failed: the initial loss was 6.168 against ln 1000 = 6.908 (width 64). With a tied head, the output logit of the current token is raised by its own embedding, so targets equal to the inputs give a lower loss than ln V.
+  2. `test_bootstrap_is_paired` used per-document losses with a constant ratio to the word counts, so every resample gave the same ratio. When the injection I-16 (unpaired bootstrap) was active, the test failed only through floating-point noise (interval printed as -0.0000 to 0.0000), not because the resampling was visibly unpaired.
+- **How it was caught:** (1) by the first run of the suite on the correct code, which gave one failure. (2) by reading the failure message of injection I-16, which showed an interval of about zero instead of a real spread.
+- **Root cause:** The tests were judged by whether they passed on correct code and failed under the injection, without checking that they failed for the intended reason, and the test data was not checked for being able to discriminate between a correct and a broken implementation.
+- **Fix:** (1) the test builds its targets with the project's own batch builder on random windows (independent targets), which also lets it catch I-02 for a tied head. (2) per-document losses now vary; with I-16 the interval is (-0.1255, 0.1253). After the fixes the correct code passed (68 passed, 1 expected failure) and all 16 injections were detected by their intended tests.
+- **Lesson:** Run every test against the correct code and against its injection before trusting it, and read the failure message of the injected run to confirm it shows the intended mechanism.
