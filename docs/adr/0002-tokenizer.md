@@ -103,3 +103,40 @@ Reopen this decision if any of the following occurs:
 1. **A §10 check fails:** the round trip, any `<|unk|>` in the encoded splits, more than 10 residue pieces among the 200 most frequent, or the vocabulary-size comparison favouring 16k or 48k.
 2. **FineWeb-2 is added to the corpus** (ADR-0001 revisit): the tokenizer and the model are retrained and the §4.8 decisions are reopened.
 3. **Measured tokens per word falls outside 1.5 to 2.5:** the Data Spec token budget and ADR-0001's first revisit trigger are re-evaluated.
+
+## Amendment 1 (2026-10-09): vocabulary size 16,000
+
+*The text above is unchanged (it still names 32,000 and the 5% tokens-per-word rule). This section records the vocabulary decision; the status stays Proposed until `docs/04-tokenizer-spec.md` §10 passes.*
+
+| | |
+|---|---|
+| **Decided by** | Marwan |
+| **Evidence** | `docs/06-training-plan.md` §7 and Appendix A (preliminary: scratchpad code, trial tokenizers, not the production pipeline) |
+
+**Decision: the vocabulary has 16,000 entries (including the three special tokens), not 32,000.** The algorithm, library, normalization table, and special-token IDs are unchanged. The byte tokens occupy IDs 3 to 258 and learned merges start at 259, so 15,741 merges are learned.
+
+**Why.** The decision rule changed from tokens per word to validation loss per word, so that vocabularies are compared on modelling the same text. Matched short runs of the `base` model (one pass over the same 18.7M words, two seeds each, trial tokenizers) gave:
+
+| | 32,000 | 16,000 |
+|---|---|---|
+| Final validation loss per word, mean of 2 seeds (nats) | 7.4037 | **7.3150** |
+| Seed-to-seed spread | 0.013 | 0.039 |
+| Parameters | 23,111,424 | 16,967,424 |
+| Tokens per word (held-out, preliminary) | 1.4755 | 1.6073 (+8.9%) |
+
+The 16k model is lower by 0.089 nats per word (8.5% lower perplexity per word), in both seed pairs, against a larger spread of 0.039. The 5% tokens-per-word rule of `04` §10 would have kept 32k, because 16k needs 8.9% more tokens for the same text; the new rule weighs that against the 26.6% smaller model, 1.54 GiB less memory at micro-batch 16, and 23% higher throughput with the real loader, 74.6k against 60.7k tokens/s (`06` §5).
+
+**Consequences.**
+
+- Embedding matrix: 16,000 × `d_model` = 6.1M parameters at `d_model` = 384, 36.2% of `base` (53.2% at 32,000). The embedding-cost bullet of the Consequences above should be read with these numbers.
+- Token supply rises to about 328.0M train tokens (preliminary), so 2 epochs are 38.7 tokens per parameter.
+- Sequences are longer in tokens: 512 tokens cover about 318 words instead of 347.
+- Changes to `04-tokenizer-spec.md` §6, §9, §10, and `05-model-architecture.md` are listed as proposed edits in `06-training-plan.md` §11 (items 1 to 3 and 10).
+
+**Limits of the evidence.**
+
+- The pilot trains at 1.2 to 1.8 tokens per parameter, a regime that favours the smaller model; it does not show the outcome at 2 epochs on 300M tokens. A longer matched comparison was considered and not scheduled.
+- Two seeds per vocabulary; no significance test. The 32k model leads for the first half of the pass and 16k overtakes at 4/6.
+- Trial tokenizers trained on 8.7% of the corpus's words with approximated normalization.
+
+**Re-confirmation.** The comparison is repeated on the production tokenizer and splits (`04` §10, proposed rule). If 32,000 then has lower mean validation loss per word by more than the seed spread, this decision is reopened.

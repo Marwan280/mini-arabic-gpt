@@ -73,3 +73,14 @@ Copy this block for each new entry. Use the next free ID. Dates are ISO (YYYY-MM
 - **Root cause:** Two rules were specified separately and their interaction on the same characters was not tested before writing §10's expected behaviour.
 - **Fix:** Not applied. Two options are recorded in `05-model-architecture.md` §13 (item 5): keep the prefix with the digits and reword §10, or make the prefix its own pre-token and reword P3. The decision belongs to `04` (Part D of the spec work). The §10 unit tests must cover prefix plus digits, and the era-marker cases above.
 - **Lesson:** Test rule interactions on real strings when the rules are written, not only each rule alone.
+
+### EXP-006: Evaluation batch of 32 pushed reserved GPU memory above the card's 7.96 GiB
+
+- **ID:** EXP-006
+- **Date:** 2026-10-09
+- **Stage:** Training plan (vocabulary pilot, scratchpad code)
+- **What happened:** The pilot script evaluated 32 sequences at a time and converted the `(B, T, V)` logits to `float32`. At V = 32,000 the evaluation peak was 5.21 GiB allocated and 8.0 GiB reserved, and the 32k training runs reserved 9.56 GiB in total, above the card's 7.96 GiB. Windows then uses shared system memory, so the wall-clock time of the pilot runs (764 s for 32k against about 440 s expected from 63k tokens/s) was not a valid throughput figure. The 16k runs reserved 5.63 GiB and were not affected.
+- **How it was caught:** By the `peak reserved` line printed at the end of each run, and confirmed by a separate benchmark with the real loader that reproduced 8.0 GiB at evaluation batch 32 and 2.31 GiB at batch 8.
+- **Root cause:** The memory plan covered training only. Evaluation was assumed to be cheap because it has no backward pass, but the logits and their `float32` copy dominate memory at this vocabulary size.
+- **Fix:** The evaluation batch is fixed at 8 (`docs/06-training-plan.md` §4.6, §4.7) and `torch.cuda.empty_cache()` runs after each evaluation. The pilot's losses were not affected and were kept; the throughput figures come from the benchmark.
+- **Lesson:** Budget memory for evaluation as well as training, and read the reserved-memory figure of every run, not only the loss.
