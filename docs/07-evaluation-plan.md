@@ -5,7 +5,7 @@
 | **Project** | mini-arabic-gpt |
 | **Status** | Draft, pending ADR-0005 |
 | **Version** | 0.1 |
-| **Last updated** | 2026-10-09 |
+| **Last updated** | 2026-10-10 |
 | **Depends on** | `01-prd.md` (G4, M1, M2, NFR4), `02-design-doc.md` §4.5, §4.6, §9, `03-data-spec.md` §10, `04-tokenizer-spec.md` §10, `05-model-architecture.md`, `06-training-plan.md` (checkpoints, validation protocol, V = 16,000), `docs/adr/0001-training-corpus.md`, `docs/adr/0002-tokenizer.md` (Amendment 1), `docs/adr/0004-training-recipe.md` |
 | **Feeds** | `08-testing-strategy.md` (tests of the evaluation code), `09-ui-spec.md` (generation settings, known failure modes), `10-model-card.md` (results, limitations, probe descriptions), `11-roadmap.md` (evaluation schedule) |
 
@@ -14,6 +14,8 @@
 This document specifies how the trained model is judged: the quantitative comparison with an n-gram baseline (PRD M1), the human rating of generated text (PRD M2), the red-flag probes whose outputs are described (not quoted) in the Model Card, and the automatic diagnostics that accompany them. It fixes the metrics, the protocol, the statistics, the order of operations that protects the test split, and the checks that the evaluation code itself is correct.
 
 **Status of numbers.** The model, the test split, and the production tokenizer do not exist yet. Every measured number below comes from a **rehearsal** run with throwaway code in the session scratchpad: the 16k pilot model of `06-training-plan.md` §7 (seed 1, one pass over a 10% Wikipedia sample), the held-out documents of that sample, and trial tokenizers. They are labelled **preliminary (scratchpad, not the production pipeline)**. They show that the protocol works and what to expect; they are not results. Commands and outputs are in Appendix A.
+
+**Terms (added in Part D).** "Scratchpad pilot" means a throwaway experiment run in the session scratchpad before the production code exists: the vocabulary pilot of `06` §7 and the pilot model of `07`. "Production pilot" means the first run of the production code before the main run (`06` §6, gates P-a to P-d). In this document, "pilot model" and "the pilot" mean the scratchpad pilot (the 16k model of `06` §7); the production pilot is not used for any number here.
 
 **Out of scope:** the code and tests of the evaluation tooling (`08`), the demo (`09`), the Model Card text (`10`).
 
@@ -329,24 +331,26 @@ Each check becomes a test in `08-testing-strategy.md` and runs before step 4 of 
 
 ## 11. Proposed edits to earlier documents
 
-Not applied; listed for Part D.
+*Part D (2026-10-10): every row below has a status in the last column; "Applied" refers to the row identifiers of the Part D table (PD-nn), "Left to the author" rows are edits to `CLAUDE.md`.*
 
-| # | Document | Old | New |
-|---|---|---|---|
-| 1 | `01-prd.md` M1 | "Model perplexity is lower than the baseline" | add "with the 95% paired-bootstrap interval of the difference in loss per word excluding zero (see `07-evaluation-plan.md` §4.6)" |
-| 2 | `01-prd.md` M2 | "At least 70% of continuations rated grammatically acceptable MSA *(provisional)*" | "Each of two independent blind raters labels at least 70% of the model's 50 continuations acceptable MSA under the written rubric (`07` §5.3)"; keep "(provisional)": the author accepted the rule as written and kept it provisional (2026-10-09) |
-| 3 | `01-prd.md` §6 intro | "Targets marked *provisional* are finalized in `07-evaluation-plan.md`" | no change needed once M2 is edited; the M5 target stays provisional until `09` |
-| 4 | `01-prd.md` §11 and `02-design-doc.md` §12, open questions on the baseline and evaluation prompts | listed as open | resolved by `07` §4.4 and §5.1 |
-| 5 | `02-design-doc.md` §4.5, Quantitative design | "perplexity on the **full** test split, for the model and for an n-gram baseline, using the same tokenizer" | add: "scored with a strided window of 512 and stride 256 (`07` §4.3); the baseline is a modified Kneser-Ney token n-gram model (`07` §4.4); the difference is reported with a paired document-level bootstrap interval" |
-| 6 | `02-design-doc.md` §4.5, Qualitative design | "continuations for a fixed set of prompts, generated with fixed settings and a fixed seed, saved for manual rating" | add: "50 prompts, rated blind and shuffled by two raters with a written rubric; agreement reported as Cohen's kappa (`07` §5)" |
-| 7 | `02-design-doc.md` §4.6, Settings | "temperature, top-k, maximum new tokens" | add the evaluation defaults 0.8, 40, 80 (`07` §5.2); the demo's own defaults are set in `09` |
-| 8 | `02-design-doc.md` §9, silent failure table | no row for scoring with truncated context, or for raters seeing the system label | add two rows. Row 1: failure "perplexity scored in non-overlapping windows is compared with an unbounded-context baseline", symptom "model looks worse than it is", safeguard "strided scoring, both protocols reported". Row 2: failure "a rater sees which system wrote the text", symptom "biased ratings", safeguard "blind shuffled sheets, key held separately" |
-| 9 | `03-data-spec.md` §10, test split | "Final evaluation only (PRD M1), never used for tuning" | add: "also supplies the openings of 30 prompts for the qualitative evaluation (PRD M2); no setting is tuned on them" |
-| 10 | `06-training-plan.md` §4.7 | "Windows are non-overlapping (stride `T`)…" | add: "The final test evaluation uses a strided window as well (`07` §4.3); the numbers are not interchangeable" |
-| 11 | `CLAUDE.md`, "Comparable metrics" (flagged, not for me to edit) | "perplexity is only comparable between runs using the same tokenizer and the same eval set. Never compare across them." | add: "Loss per word and bits per UTF-8 byte, computed on the same text with a tokenizer-independent denominator, may be compared across tokenizers." `06` §7 already relies on this refinement. **Approved by the author for Part D** (2026-10-09) |
-| 12 | `01-prd.md` M6 and `02-design-doc.md` §3 (diagram count) | "14 diagrams" | running list so far: 3 (doc 05) + 3 (doc 06) + 2 (doc 07) = 8; final count after doc 11 |
-| 13 | `.gitignore` (outside this task's allowed edits) | ends with `data/` and `checkpoints/` | add `reports/eval/*/probes_full.md` so the full probe outputs are never committed; needed before the probes are generated. CLAUDE.md's git rules say data and checkpoints are ignored, so the new entry is consistent with them |
-| 14 | `01-prd.md` NG8 | "Known limitations are disclosed in the Model Card." | no change; record that probe outputs are described, not quoted (`07` §5.6) |
+Before Part D: not applied; listed for Part D.
+
+| # | Document | Old | New | Part D status |
+|---|---|---|---|---|
+| 1 | `01-prd.md` M1 | "Model perplexity is lower than the baseline" | add "with the 95% paired-bootstrap interval of the difference in loss per word excluding zero (see `07-evaluation-plan.md` §4.6)" | Applied (PD-05) |
+| 2 | `01-prd.md` M2 | "At least 70% of continuations rated grammatically acceptable MSA *(provisional)*" | "Each of two independent blind raters labels at least 70% of the model's 50 continuations acceptable MSA under the written rubric (`07` §5.3)"; keep "(provisional)": the author accepted the rule as written and kept it provisional (2026-10-09) | Applied (PD-06) |
+| 3 | `01-prd.md` §6 intro | "Targets marked *provisional* are finalized in `07-evaluation-plan.md`" | no change needed once M2 is edited; the M5 target stays provisional until `09` | No action (follows from PD-06) |
+| 4 | `01-prd.md` §11 and `02-design-doc.md` §12, open questions on the baseline and evaluation prompts | listed as open | resolved by `07` §4.4 and §5.1 | Applied (PD-14, PD-19) |
+| 5 | `02-design-doc.md` §4.5, Quantitative design | "perplexity on the **full** test split, for the model and for an n-gram baseline, using the same tokenizer" | add: "scored with a strided window of 512 and stride 256 (`07` §4.3); the baseline is a modified Kneser-Ney token n-gram model (`07` §4.4); the difference is reported with a paired document-level bootstrap interval" | Applied (PD-23) |
+| 6 | `02-design-doc.md` §4.5, Qualitative design | "continuations for a fixed set of prompts, generated with fixed settings and a fixed seed, saved for manual rating" | add: "50 prompts, rated blind and shuffled by two raters with a written rubric; agreement reported as Cohen's kappa (`07` §5)" | Applied (PD-24) |
+| 7 | `02-design-doc.md` §4.6, Settings | "temperature, top-k, maximum new tokens" | add the evaluation defaults 0.8, 40, 80 (`07` §5.2); the demo's own defaults are set in `09` | Applied (PD-25) |
+| 8 | `02-design-doc.md` §9, silent failure table | no row for scoring with truncated context, or for raters seeing the system label | add two rows. Row 1: failure "perplexity scored in non-overlapping windows is compared with an unbounded-context baseline", symptom "model looks worse than it is", safeguard "strided scoring, both protocols reported". Row 2: failure "a rater sees which system wrote the text", symptom "biased ratings", safeguard "blind shuffled sheets, key held separately" | Applied (PD-26) |
+| 9 | `03-data-spec.md` §10, test split | "Final evaluation only (PRD M1), never used for tuning" | add: "also supplies the openings of 30 prompts for the qualitative evaluation (PRD M2); no setting is tuned on them" | Applied (PD-38) |
+| 10 | `06-training-plan.md` §4.7 | "Windows are non-overlapping (stride `T`)…" | add: "The final test evaluation uses a strided window as well (`07` §4.3); the numbers are not interchangeable" | Applied (PD-54) |
+| 11 | `CLAUDE.md`, "Comparable metrics" (flagged, not for me to edit) | "perplexity is only comparable between runs using the same tokenizer and the same eval set. Never compare across them." | add: "Loss per word and bits per UTF-8 byte, computed on the same text with a tokenizer-independent denominator, may be compared across tokenizers." `06` §7 already relies on this refinement. **Approved by the author for Part D** (2026-10-09) | Left to the author (CL-5); the author applies it in `CLAUDE.md` |
+| 12 | `01-prd.md` M6 and `02-design-doc.md` §3 (diagram count) | "14 diagrams" | running list so far: 3 (doc 05) + 3 (doc 06) + 2 (doc 07) = 8; final count after doc 11 | Superseded by PD-09 (final total 14 diagrams, listed in `docs/diagrams/README.md`) |
+| 13 | `.gitignore` (outside this task's allowed edits) | ends with `data/` and `checkpoints/` | add `reports/eval/*/probes_full.md` so the full probe outputs are never committed; needed before the probes are generated. CLAUDE.md's git rules say data and checkpoints are ignored, so the new entry is consistent with them | Applied (PD-63) |
+| 14 | `01-prd.md` NG8 | "Known limitations are disclosed in the Model Card." | no change; record that probe outputs are described, not quoted (`07` §5.6) | No action |
 
 ## 12. Tasks and items carried to other documents
 

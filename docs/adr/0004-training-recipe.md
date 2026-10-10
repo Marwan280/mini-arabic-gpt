@@ -10,7 +10,7 @@
 
 ## Context
 
-`docs/05-model-architecture.md` fixes the `base` model (23.1M parameters at a 32,000-entry vocabulary). The corpus supplies about 301M training tokens (preliminary), the project GPU has 7.96 GiB, and one run must take under 6 hours (M3). The author set the run plan: one pilot, one main run of about 2 epochs, one spare, with the best-validation checkpoint kept as well as the final one. The vocabulary-size question left open by `05` was to be settled by matched short runs.
+`docs/05-model-architecture.md` fixes the `base` model (16,967,424 parameters at the decided 16,000-entry vocabulary; 23.1M at 32,000). The corpus supplies about 328M training tokens at 16,000 entries (about 301M at 32,000; preliminary), the project GPU has 7.96 GiB, and one run must take under 6 hours (M3). The author set the run plan: one pilot, one main run of about 2 epochs, one spare, with the best-validation checkpoint kept as well as the final one. The vocabulary-size question left open by `05` was to be settled by matched short runs.
 
 ## Decision
 

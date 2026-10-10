@@ -83,3 +83,9 @@ Reasons:
 2. The fast tier exceeds 45 s.
 3. The injection manifest costs more than a few minutes per gate to maintain.
 4. A real bug is found that no injection or test would have caught: add a test and an injection for it.
+
+## Amendment 1 (2026-10-10): demo tests and two injections
+
+*The text above is unchanged. Where it says 91 planned tests and sixteen injections, read this amendment instead; the status stays Proposed.*
+
+Part D of the specification work (the author approved the additions on 2026-10-10) replaced the three demo tests of `docs/08-testing-strategy.md` by the 14 tests of `docs/09-ui-spec.md` §8, so the plan has **102 tests**, and added **I-17** (limitations text removed or placed below the output) and **I-18** (telemetry left at the default) to the catalog: **eighteen injections**, of which sixteen were run in the prototype and two are not yet run. Gate G2 is reduced to the G1 injection subset (I-01 to I-05, I-10, I-13, I-14) plus the `data` and GPU tests, as decided in `docs/11-roadmap.md` (ADR-0009); the other injections run when capacity allows.

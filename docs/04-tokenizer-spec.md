@@ -5,7 +5,7 @@
 | **Project** | mini-arabic-gpt |
 | **Status** | Draft, pending ADR-0002 |
 | **Version** | 0.1 |
-| **Last updated** | 2026-10-09 |
+| **Last updated** | 2026-10-10 |
 | **Depends on** | `03-data-spec.md`, `docs/adr/0001-training-corpus.md`, `reports/data-inspection/tokenizer-notes.md` |
 | **Feeds** | `05-model-architecture.md` (vocabulary size), `07-evaluation-plan.md` (perplexity comparability), `09-ui-spec.md` (token display) |
 
@@ -94,7 +94,7 @@ Applied in this order, to every string, before pre-tokenization. Each rule is a 
 |---|---|---|
 | N11 | Map ASCII `,` → Arabic comma `،`; `;` → `؛`; `?` → `؟`. | TN §10: Arabic forms dominate 21:1, 16:1, 12:1 in cleaned text. One form per mark. |
 | N12 | Map Arabic percent ٪ (U+066A) → `%`. | TN §10: ASCII % dominates 16:1. |
-| N13 | Map curly double quotes “ ” and ASCII `"` → the guillemets « » **is not done**. Quotes are kept as they are. | TN §10: guillemets are the Wikipedia style, but ASCII quotes may mark different usage; not measured. Collapsing them is a guess; leaving them costs a few vocabulary entries. *Provisional.* |
+| N13 | Quotes are kept as they are: curly “ ” and ASCII `"` are not mapped to the guillemets « ». | TN §10: guillemets are the Wikipedia style, but ASCII quotes may mark different usage; not measured. Collapsing them is a guess; leaving them costs a few vocabulary entries. *Provisional.* |
 | N14 | Map en dash – and em dash — → hyphen-minus `-`. Map minus sign − → `-`. Map the ellipsis character … (after NFKC it is already `...`). Map the fraction slash ⁄ (U+2044), which NFKC produces from ½, to `/`. | TN §10: dash variants carry no meaning difference the model needs. TN §11: NFKC turns ½ (77 raw occurrences) into 1⁄2. |
 
 **Exception to N11:** a comma, semicolon, or question mark that appears **inside a run of Latin letters or digits** (e.g. "1,234", "e.g., ") is left unchanged. *Provisional*: implemented as a context rule; confirmed in §10.
@@ -119,18 +119,18 @@ Pre-tokenization decides where a word boundary can never be crossed by a subword
 |---|---|---|
 | P1 | Split on whitespace. Each space is attached to the **following** word as a prefix marker (the standard "metaspace" convention), so that word starts are distinguishable. | Standard practice; needed for correct detokenization. |
 | P2 | Split between an Arabic letter and a Latin letter in both directions. | TN §8: 629 cleaned documents have Arabic directly against Latin ("الCASS", "وIBM"). The Arabic part is a prefix; separating it lets the prefix be shared. |
-| P3 | Split between a digit and an Arabic letter in both directions, **except**: do not split a **single** Arabic letter in {و, ب, ل, ف, ك} that precedes a digit, and do not split the era markers م, هـ and ھ (heh doachashmee) that follow a digit. The tatweel in بـ59 is kept by N8 (it is not between two Arabic letters), and the pre-token is بـ. | TN §8: 75% of letter→digit contacts are these one-letter prefixes; 83% of digit→letter contacts are era markers. Splitting them would detach a prefix from its number. TN §3: ھ stands in for the Hijri marker in some articles (111 occurrences in 27 cleaned documents). *Provisional*: the exception list is confirmed in §10. |
+| P3 | Split between a digit and an Arabic letter in both directions, **with no exceptions** (decided 2026-10-10, Part D of the specification work). A one-letter prefix in {و, ب, ل, ف, ك} before a digit and an era marker م, هـ or ھ (heh doachashmee) after a digit are therefore their own pre-tokens: "و2010" → "و", "2", "010"; "791هـ" → "791", "هـ"; "1920م" → "1", "920", "م". The tatweel in بـ59 is kept by N8 (it is not between two Arabic letters), and the pre-token is بـ. | TN §8: 75% of letter→digit contacts are one-letter prefixes and 83% of digit→letter contacts are era markers, which an earlier draft of this rule kept attached to their numbers. Rejected because P5 groups digits from the right, so an attached prefix or marker lands on the first or last digit group instead of the whole number ("و2010" → "و2" + "010"; "1920م" → "1" + "920م"): the same number would tokenize differently with and without a prefix or marker (EXP-005). Without exceptions, a number is the same pieces wherever it appears, and the model can still learn that و or م frequently neighbours a number. TN §3: ھ stands in for the Hijri marker in some articles (111 occurrences in 27 cleaned documents). *Provisional*: confirmed or reversed by the check in §10. |
 | P4 | Punctuation characters are their own pre-tokens (each punctuation character separated from letters on both sides). | TN §8: 7% of cleaned documents have letter-punctuation-letter with no space ("الوقت.وتقول"). Isolating punctuation stops a subword from spanning a sentence boundary. |
-| P5 | Digit strings are split into runs of at most 3 digits, from the right. | Standard for small models: "29004" → "29", "004". Keeps the number vocabulary small and the model's arithmetic-adjacent behaviour consistent. *Provisional.* |
+| P5 | Digit strings are split into runs of at most 3 digits, from the right. Letters are never part of a digit run (P3). | Standard for small models: "29004" → "29", "004". Keeps the number vocabulary small and the model's arithmetic-adjacent behaviour consistent. *Provisional.* |
 
 ## 6. Subword algorithm and vocabulary
 
 | Item | Decision | Reason |
 |---|---|---|
 | **Algorithm** | **Byte-level BPE** (byte-pair encoding over UTF-8 bytes). | Any input is encodable (TR4): characters outside the vocabulary fall back to byte tokens. TN §13 shows 2,269 distinct characters with a long tail of singletons; byte fallback covers the tail without reserving entries for it. BPE is the GPT-family standard and is well supported by the chosen library. |
-| **Vocabulary size** | **32,000** (including special tokens). | Below the `uint16` limit (TR2) with margin. Typical for models in the 10–30M parameter range: the embedding and output matrices are `vocab × d_model`, and at 32k they already dominate parameter count at small `d_model` (see `05-model-architecture.md`). *Provisional*: 16k and 48k are compared in §10 by tokens-per-word on the validation split. |
+| **Vocabulary size** | **16,000** (including special tokens; ADR-0002 Amendment 1, it was 32,000 in the first draft). | Below the `uint16` limit (TR2) with margin. The embedding and output matrices are `vocab × d_model`, and at 32k they already dominate parameter count at small `d_model` (see `05-model-architecture.md`). *Provisional*: 16k and 32k are compared in §10 by validation loss per word (see `06-training-plan.md` §7), not by tokens per word; 16k was lower in the preliminary scratchpad comparison. |
 | **Library** | **Hugging Face `tokenizers`** (Rust core, Python API). | Byte-level BPE, custom normalizer and pre-tokenizer pipelines, one-file serialization (`tokenizer.json`), fast batch encoding, and the same object is loaded in training, evaluation, and the Gradio demo. SentencePiece was considered (see ADR-0002): its Unigram model is a reasonable alternative, but its normalization is a fixed charmap, which fits TR6 less well. |
-| **Training data** | `data/clean/train.txt` only (TR1). The full split, not a sample, unless training time exceeds 30 minutes, in which case a seeded uniform sample of documents is used and the sample size recorded. | Data Spec §10 |
+| **Training data** | `data/clean/train.jsonl` only (TR1). The full split, not a sample, unless training time exceeds 30 minutes, in which case a seeded uniform sample of documents is used and the sample size recorded. | Data Spec §10 |
 | **Byte fallback** | Enabled: the 256 byte tokens are always in the vocabulary. | TR4 |
 | **Case** | Preserved. | Latin is a small share; lowercasing would lose proper-noun information for no vocabulary benefit. |
 
@@ -140,9 +140,9 @@ Pre-tokenization decides where a word boundary can never be crossed by a subword
 
 | Token | ID | Use |
 |---|---|---|
-| `<|endoftext|>` | 0 | Inserted between documents in the token stream (Data Spec §12). The model learns document boundaries. Also the stop token for generation. |
-| `<|pad|>` | 1 | Padding for batched inference in the demo. Never appears in training data. |
-| `<|unk|>` | 2 | Reserved; with byte fallback it should never be produced. Its presence in any encoded text is a test failure. |
+| `<\|endoftext\|>` | 0 | Inserted between documents in the token stream (Data Spec §12). The model learns document boundaries. Also the stop token for generation. |
+| `<\|pad\|>` | 1 | Padding for batched inference in the demo. Never appears in training data. |
+| `<\|unk\|>` | 2 | Reserved; with byte fallback it should never be produced. Its presence in any encoded text is a test failure. |
 
 IDs 3–258 are the 256 byte tokens. Learned merges start at 259.
 
@@ -153,7 +153,7 @@ IDs 3–258 are the 256 byte tokens. Learned merges start at 259.
 | `artifacts/tokenizer/tokenizer.json` | The complete tokenizer: normalizer, pre-tokenizer, vocabulary, merges, special tokens. One file, loaded by `Tokenizer.from_file`. Tracked in git. |
 | `artifacts/tokenizer/tokenizer_config.yaml` | Copy of the config used to train it (§9), the train-split manifest hash, the training date, the library version, and the measured statistics from §10. Tracked in git. |
 | `artifacts/tokenizer/CHANGELOG.md` | One entry per tokenizer version (§11). |
-| `data/tokens/{train,val,test}.bin` | Encoded splits, `uint16`, little-endian, flat; documents separated by `<|endoftext|>`. Git-ignored. |
+| `data/tokens/{train,val,test}.bin` | Encoded splits, `uint16`, little-endian, flat; documents separated by `<\|endoftext\|>`. Git-ignored. |
 | `data/tokens/{train,val,test}.meta.json` | Token count, document count, tokenizer file hash, source split hash. Git-ignored. |
 
 **Encoder assertion (Design §4.2):** before writing any `.bin`, assert `max(ids) < 65536` and that the tokenizer hash matches `tokenizer_config.yaml`.
@@ -182,20 +182,19 @@ normalization:
     "—": "-"
     "−": "-"
     "⁄": "/"
+    "\t": " "
+  collapse_spaces: true
   remove_diacritics: true
   tatweel: between_letters_only
   punctuation_context_exception: latin_or_digit_run
 pretokenization:
   split_arabic_latin: true
-  split_digit_letter: true
-  digit_letter_exceptions:
-    prefix_letters: ["و", "ب", "ل", "ف", "ك"]
-    era_suffixes: ["م", "هـ", "ھ"]
+  split_digit_letter: true   # always, on both sides, no exceptions (P3)
   isolate_punctuation: true
   digit_group_size: 3
 model:
   type: byte_level_bpe
-  vocab_size: 32000
+  vocab_size: 16000
   byte_fallback: true
 special_tokens: ["<|endoftext|>", "<|pad|>", "<|unk|>"]
 ```
@@ -209,13 +208,13 @@ The tokenizer is accepted only when all of the following are recorded in `tokeni
 | Check | Pass condition |
 |---|---|
 | **Round trip** | `decode(encode(t)) == normalize(t)` on every document of the validation split and on a fixed list of adversarial strings (mixed scripts, all special characters from TN §11, empty string, one emoji, a 10,000-character line). |
-| **No `<|unk|>`** | Zero occurrences across all three encoded splits. |
+| **No `<\|unk\|>`** | Zero occurrences across all three encoded splits. |
 | **Vocabulary bound** | `max id < 65536`. |
 | **Tokens per word** | Measured on the validation split. Replaces the provisional 1.5–2.5 assumption in Data Spec §3. If outside 1.5–2.5, the Data Spec token budget and ADR-0001 trigger 1 are re-evaluated. |
-| **Vocabulary size comparison** | Tokens per word at 16k, 32k, 48k on the same validation sample, recorded in a table. 32k stays unless 16k is within 5% of it (then 16k, smaller embedding) or 48k improves by more than 15% (then reconsider). |
+| **Vocabulary size comparison** | Validation loss per word (nats) of the `base` model at 16k and 32k, trained for one pass over the same seeded sample of training documents (matched on text, two seeds each, settings of `06-training-plan.md` §7.1) and evaluated on the same held-out documents; tokens per word is recorded for information. The smaller vocabulary is chosen if its mean loss per word is lower by more than the larger seed-to-seed spread; otherwise 32k. 48k is evaluated only if 32k wins and the tokens per word of 48k is more than 15% lower than that of 32k. The comparison is repeated on the production tokenizer and train/validation split. |
 | **Top-200 inspection** | The 200 most frequent learned pieces are listed and read by hand. Fail if more than 10 are markup residue, template artifacts (TN §12), or merged punctuation sequences. |
-| **Rule spot-checks** | For each normalization rule N1–N14 and pre-tokenization rule P1–P5, a unit test with one input and the expected output (`tests/test_tokenizer.py`). |
-| **Era-marker and prefix check (P3)** | "1313 هـ", "791هـ", "1920م", "بـ59", "و2010" tokenize with the marker or prefix as its own piece, not merged into the digits. |
+| **Rule spot-checks** | For each normalization rule N1–N14 and pre-tokenization rule P1–P5, a unit test with one input and the expected output (`tests/test_tokenizer.py`). The expected output is derived by hand from §4 and §5, not from the code (`08-testing-strategy.md` §7). |
+| **Era-marker and prefix check (P3)** | The pre-tokens of these inputs are exactly: "1313 هـ" → "1", "313", " هـ"; "791هـ" → "791", "هـ"; "1920م" → "1", "920", "م"; "1920ھ" → "1", "920", "ھ"; "بـ59" → "بـ", "59"; "و2010" → "و", "2", "010". The marker or prefix is never merged into a digit group. |
 | **Diacritics check (N7)** | A fully diacritized sentence and its undiacritized form encode identically. |
 
 ## 11. Versioning and the FineWeb-2 contingency
@@ -228,10 +227,10 @@ The tokenizer is accepted only when all of the following are recorded in `tokeni
 
 | Question | Resolved by |
 |---|---|
-| Final vocabulary size (16k / 32k / 48k) | §10 comparison |
+| Final vocabulary size | Decided: 16,000 (ADR-0002 Amendment 1); re-confirmed by the §10 comparison on the production tokenizer |
 | Keep or remove zero-width non-joiner (N3) | §10 top-200 inspection and round-trip on Persian names |
 | Quote normalization (N13) | §10 top-200 inspection: if quote variants fragment the vocabulary, revisit |
-| Exact exception list for P3 | §10 era-marker and prefix check |
+| Exceptions for P3 | Decided 2026-10-10: none (P3); checked by the §10 era-marker and prefix check |
 | Digit grouping (P5) | §10 tokens-per-word; `05-model-architecture.md` if context length is tight |
 
 ## 13. Related documents

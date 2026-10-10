@@ -1,10 +1,11 @@
 # Technical Design Doc
 
 | | |
+|---|---|
 | **Project** | mini-arabic-gpt |
 | **Status** | Draft |
-| **Version** | 0.1 |
-| **Last updated** | 2026-10-04 |
+| **Version** | 0.2 |
+| **Last updated** | 2026-10-10 |
 | **Requirements** | `01-prd.md` |
 
 ## 1. Summary
@@ -40,10 +41,10 @@ flowchart LR
     D -->|4. Evaluation| F
     E -->|5. Generation| G[Generated text]
     C --> G
-    G -->|6. Demo| H[Gradio app<br/>Hugging Face Spaces]
+    G -->|6. Demo| H[Gradio app<br/>local]
 ```
 
-Detailed diagrams for each stage are in `docs/diagrams/`.
+Detailed diagrams for each stage are in `docs/diagrams/`; the 14 planned diagrams are listed in `docs/diagrams/README.md`.
 
 ## 4. Components
 
@@ -54,7 +55,7 @@ Detailed diagrams for each stage are in `docs/diagrams/`.
 | | |
 |---|---|
 | **Input** | Raw corpus downloaded from its source |
-| **Output** | `data/clean/train.txt`, `data/clean/val.txt`, `data/clean/test.txt` (UTF-8) |
+| **Output** | `data/clean/train.jsonl`, `data/clean/val.jsonl`, `data/clean/test.jsonl` (UTF-8, one JSON object per line with `id` and `text`; `03-data-spec.md` §12) |
 | **Spec** | `03-data-spec.md` |
 
 **Steps:**
@@ -78,7 +79,7 @@ Detailed diagrams for each stage are in `docs/diagrams/`.
 
 | | |
 |---|---|
-| **Input** | `data/clean/train.txt` |
+| **Input** | `data/clean/train.jsonl` |
 | **Output** | Tokenizer files in `artifacts/tokenizer/`; tokenized splits `data/tokens/{train,val,test}.bin` |
 | **Spec** | `04-tokenizer-spec.md` |
 
@@ -86,7 +87,7 @@ Detailed diagrams for each stage are in `docs/diagrams/`.
 
 - A **subword tokenizer** (BPE or Unigram) trained on the **train split only**, so that no information from the validation or test sets leaks into it.
 - **Normalization rules** are part of the tokenizer itself, not a separate preprocessing script. Any text entering the model, during training or in the demo, passes through the exact same normalization.
-- The tokenizer is trained with an existing library. This is allowed under the PRD's definition of "from scratch". The library choice (Hugging Face `tokenizers` or SentencePiece) is decided in `04-tokenizer-spec.md` and recorded in an ADR.
+- The tokenizer is trained with an existing library. This is allowed under the PRD's definition of "from scratch". The library choice is decided in `04-tokenizer-spec.md` and recorded in ADR-0002 (byte-level BPE with Hugging Face `tokenizers`, status Proposed).
 
 **Tokenized storage format:**
 
@@ -119,7 +120,7 @@ Each split is encoded once and stored as a flat binary file of token IDs, `uint1
 - **Written from scratch** using PyTorch primitives (`nn.Linear`, `nn.Embedding`, etc.). No pretrained weights and no model classes from `transformers` (PRD NG5).
 - **Size between 10M and 30M parameters** (PRD NFR2).
 
-**Deferred to `05-model-architecture.md`** (provisional): number of layers, heads, and embedding size; context length; positional encoding type (learned vs. rotary); weight tying between embedding and output head; dropout.
+**Deferred to `05-model-architecture.md`:** number of layers, heads, and embedding size; context length; positional encoding type (learned vs. rotary); weight tying between embedding and output head; dropout. Decided in `05-model-architecture.md` §3 (ADR-0003, status Proposed).
 
 ### 4.4 Training
 
@@ -134,8 +135,8 @@ Each split is encoded once and stored as a flat binary file of token IDs, `uint1
 **Design:**
 
 - **Loss:** cross-entropy between the logits at position `t` and the true token at position `t+1`.
-- **Batching:** random contiguous windows of `T+1` tokens sampled from the memory-mapped train file. Input is tokens `[0..T-1]`, target is tokens `[1..T]`.
-- **Optimizer:** AdamW with gradient clipping. Learning-rate schedule: linear warmup, then cosine decay (provisional).
+- **Batching:** random contiguous windows of `T+1` tokens sampled from the memory-mapped train file. Input is tokens `[0..T-1]`, target is tokens `[1..T]`. Per epoch, the windows are non-overlapping, start at a random offset, and are visited in a random permutation (`06-training-plan.md` §4.1).
+- **Optimizer:** AdamW with gradient clipping. Learning-rate schedule: linear warmup, then cosine decay (the shape is decided; the values are provisional in `06-training-plan.md`).
 - **Mixed precision:** `bfloat16` autocast on the GPU to reduce memory use and speed up training. Blackwell GPUs support it natively.
 - **Gradient accumulation:** to reach the target effective batch size within 8 GB VRAM.
 - **Validation:** loss on a fixed sample of the validation split every `K` steps.
@@ -147,8 +148,11 @@ Each split is encoded once and stored as a flat binary file of token IDs, `uint1
 checkpoints/<run-name>/
 ├── config.yaml        # exact config used, including seed
 ├── metrics.jsonl      # one JSON line per logged step
-├── ckpt_step_XXXX.pt  # periodic checkpoints
-└── ckpt_final.pt
+├── ckpt_latest.pt     # overwritten at every save
+├── ckpt_best.pt       # lowest validation loss so far
+├── ckpt_step_{n}.pt   # kept every 5,000 steps
+├── ckpt_final.pt
+└── model_final.pt     # weights only, for generation and the demo
 ```
 
 ### 4.5 Evaluation
@@ -163,8 +167,8 @@ checkpoints/<run-name>/
 
 **Design:**
 
-- **Quantitative:** perplexity on the **full** test split, for the model and for an n-gram baseline, using the same tokenizer (PRD M1).
-- **Qualitative:** continuations for a fixed set of prompts, generated with fixed settings and a fixed seed, saved for manual rating (PRD M2).
+- **Quantitative:** perplexity on the **full** test split, for the model and for an n-gram baseline, using the same tokenizer (PRD M1). Scoring uses a strided window of 512 with stride 256; the baseline is a modified Kneser–Ney token n-gram model (`07-evaluation-plan.md` §4.4); the difference is reported with a paired document-level bootstrap interval.
+- **Qualitative:** continuations for a fixed set of prompts, generated with fixed settings and a fixed seed, saved for manual rating (PRD M2): 50 prompts, rated blind and shuffled by two raters with a written rubric; agreement is reported as Cohen's kappa.
 - **The test split is used only for final evaluation.** All tuning decisions use the validation split. Tuning on the test set would make the final numbers meaningless.
 
 ### 4.6 Generation
@@ -179,7 +183,7 @@ checkpoints/<run-name>/
 **Design:**
 
 - Autoregressive sampling: encode the prompt, then repeatedly predict the next token, sample it, and append it.
-- **Settings:** temperature, top-k, maximum new tokens.
+- **Settings:** temperature, top-k, maximum new tokens. Evaluation defaults: 0.8, 40, 80; the demo's defaults are in `09-ui-spec.md`.
 - If the sequence grows beyond the context length, only the most recent tokens are kept as input.
 - A KV cache (an optimization that avoids recomputing past tokens) is **out of scope for v1**. Generation speed at this model size is acceptable without it.
 
@@ -196,8 +200,8 @@ checkpoints/<run-name>/
 **Design:**
 
 - A single Gradio app in `app/app.py`. The UI and the inference logic live in the same Python file (PRD NG7).
-- Hosted on Hugging Face Spaces, on **CPU** (free tier). A 10M–30M parameter model runs acceptably on CPU.
-- The model checkpoint and tokenizer are downloaded from the Hugging Face Hub when the app starts, not stored in the Git repository.
+- Runs locally on the project machine (GPU if present, CPU otherwise; `09-ui-spec.md` §6.2 gives measured latencies). A 10M–30M parameter model runs acceptably on CPU.
+- The model and tokenizer are read from local paths, not stored in the Git repository; an optional argument loads them from the Hugging Face Hub.
 - The app reuses the same `generate` and tokenizer code as the rest of the project, to guarantee identical behavior.
 
 ## 5. Artifacts
@@ -210,7 +214,7 @@ checkpoints/<run-name>/
 | Tokenizer files | Tokenizer training | Encoder, generation, demo | `artifacts/tokenizer/` | Yes (small) |
 | Tokenized splits | Encoder | Training, evaluation | `data/tokens/` | No |
 | Checkpoints, configs, metrics | Training | Evaluation, generation | `checkpoints/<run-name>/` | No |
-| Final model | Training | Demo | Hugging Face Hub | No |
+| Final model | Training | Demo | `checkpoints/<run-name>/model_final.pt` (local); Hugging Face Hub optional | No |
 | Evaluation report | Evaluation | Model Card | `reports/` | Yes |
 
 ## 6. Repository structure
@@ -274,6 +278,7 @@ Full details are in `08-testing-strategy.md`. These tests are required by this d
 | **Vocabulary bound test** | All token IDs fit in `uint16`. |
 | **Split integrity test** | No document appears in more than one split. |
 | **Checkpoint resume test** | Resuming from a checkpoint reproduces the same next steps. |
+| **Bug-injection checks** | Each silent-failure safeguard in §9 fails when the bug it guards against is injected (`08-testing-strategy.md` §6). |
 
 ## 9. Silent failure modes
 
@@ -289,6 +294,8 @@ The most dangerous bugs in this project produce wrong results without errors. Ea
 | Different normalization at training vs. inference | Demo output worse than evaluation results | Normalization built into the tokenizer, shared by all stages |
 | Perplexity compared across different tokenizers | Misleading comparison | Evaluation refuses to compare runs with different tokenizer files |
 | Training silently running on CPU | Training is extremely slow | Startup check asserts the device is CUDA and logs the GPU name |
+| Non-overlapping scoring compared with a baseline that sees unbounded context | The model's loss is overstated, the comparison is unfair | Strided scoring is the primary protocol; both are reported (`07-evaluation-plan.md` §4.3) |
+| A rater sees which system wrote a continuation | Biased ratings | Blind, shuffled rating sheets; the key is held separately (`07-evaluation-plan.md` §5) |
 
 ## 10. Key decisions
 
@@ -302,9 +309,9 @@ Each decision gets a full ADR in `docs/adr/` before or during implementation.
 | D4 | Local metric logging (JSONL + matplotlib) | Weights & Biases; TensorBoard | No external account or service; results stay in the repo. Can be revisited |
 | D5 | `bfloat16` mixed precision | Full `float32`; `float16` with loss scaling | Less memory and faster than `float32`; no loss scaling needed, unlike `float16` |
 | D6 | `src/` package + thin `scripts/` | Jupyter notebooks; flat scripts | Logic is importable by tests and the demo; notebooks are hard to test and review |
-| D7 | Gradio demo on Hugging Face Spaces (CPU) | Streamlit; custom React + FastAPI | Standard for ML demos; free hosting; minimal code (PRD NG7) |
-| D8 | Tokenizer library: Hugging Face `tokenizers` or SentencePiece | Writing BPE from scratch | **Provisional,** decided in `04-tokenizer-spec.md` |
-| D9 | `pytest` for testing | `unittest` | Simpler syntax; the de facto standard |
+| D7 | Gradio demo, run locally; Hugging Face Spaces (ZeroGPU) optional after v1 | Streamlit; custom React + FastAPI; Gradio on a CPU Space | Standard for ML demos; minimal code (PRD NG7). Gradio Spaces need a paid plan except ZeroGPU (`09-ui-spec.md` §2) |
+| D8 | Tokenizer library: Hugging Face `tokenizers` (byte-level BPE) | SentencePiece; writing BPE from scratch | Decided in ADR-0002 (Proposed); details in `04-tokenizer-spec.md` |
+| D9 | `pytest` for testing, with markers `slow`, `gpu`, and `data` | `unittest` | Simpler syntax; the de facto standard. The markers separate the fast tests from the ones that need time, the GPU, or `data/` (`08-testing-strategy.md`) |
 
 ## 11. Alternatives rejected at the system level
 
@@ -316,13 +323,13 @@ Each decision gets a full ADR in `docs/adr/` before or during implementation.
 
 ## 12. Open questions
 
-| Question | Resolved in |
-|---|---|
-| Which corpus, and how many tokens? | `03-data-spec.md` |
-| Tokenizer library, algorithm, vocabulary size, normalization rules | `04-tokenizer-spec.md` |
-| Layers, heads, embedding size, context length, positional encoding | `05-model-architecture.md` |
-| Batch size, learning rate, schedule, number of steps | `06-training-plan.md` |
-| Which n-gram baseline (order, smoothing) | `07-evaluation-plan.md` |
+| Question | Resolved in | Status |
+|---|---|---|
+| Which corpus, and how many tokens? | `03-data-spec.md` | Resolved: cleaned Arabic Wikipedia, about 328M train tokens at V = 16,000 (ADR-0001, Amendment 1) |
+| Tokenizer library, algorithm, vocabulary size, normalization rules | `04-tokenizer-spec.md` | Resolved: byte-level BPE, V = 16,000 (ADR-0002, Amendment 1) |
+| Layers, heads, embedding size, context length, positional encoding | `05-model-architecture.md` | Resolved: ADR-0003 |
+| Batch size, learning rate, schedule, number of steps | `06-training-plan.md` | Resolved: ADR-0004 (values provisional, checked by the production pilot) |
+| Which n-gram baseline (order, smoothing) | `07-evaluation-plan.md` | Resolved: modified Kneser–Ney, order chosen on validation (ADR-0005) |
 
 ## 13. Related documents
 

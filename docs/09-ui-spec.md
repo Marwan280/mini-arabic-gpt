@@ -260,27 +260,29 @@ A public Space also needs a decision on where prompts may be logged and on the a
 
 ## 12. Proposed edits to earlier documents
 
-Not applied; listed for Part D.
+*Part D (2026-10-10): every row below has a status in the last column; "Applied" refers to the row identifiers of the Part D table (PD-nn), "Left to the author" rows are edits to `CLAUDE.md`.*
 
-| # | Document | Old | New |
-|---|---|---|---|
-| 1 | `01-prd.md` G5 | "Deploy a public interactive demo that anyone can use without installing anything." | "Provide an interactive demo (Gradio) that runs locally on the project machine. Publishing it publicly is an optional step after v1 (`09-ui-spec.md` §9)." |
-| 2 | `01-prd.md` M5 | "Demo availability / Publicly accessible demo that returns a continuation in under 10 seconds *(provisional)*" | "Demo responsiveness / The local demo returns a continuation in under 10 seconds for prompts up to 100 tokens on the project machine" (the author's wording; default settings, `09` §6.2) |
-| 3 | `01-prd.md` §8, deliverable 5 | "**Live demo** on Hugging Face Spaces (Gradio)." | "**Local demo** (Gradio), with a short screen recording or GIF in the README. Publishing on Hugging Face Spaces is optional." |
-| 4 | `01-prd.md` §8, deliverable 4 | "**Trained model checkpoint**, published on the Hugging Face Hub." | "**Trained model checkpoint**. Publishing it on the Hugging Face Hub (model repository only, no Space) is optional." |
-| 5 | `01-prd.md` §1, summary | "…evaluation, and deployment as a public demo." | "…evaluation, and a local demo." |
-| 6 | `01-prd.md` §5, audience row for hiring managers | "A clear README, a working demo link, readable docs, and evidence of sound engineering judgment." | "A clear README with a screen recording of the demo, readable docs, and evidence of sound engineering judgment." |
-| 7 | `01-prd.md` §11, row "Demo hosting details and response-time target" | listed as open, resolved in `09-ui-spec.md` | resolved: local demo; response-time target in M5 |
-| 8 | `02-design-doc.md` D7 | "Gradio demo on Hugging Face Spaces (CPU)" with "free hosting" as a reason | "Gradio demo, run locally; Hugging Face Spaces (ZeroGPU) optional after v1". Reason: Gradio Spaces need a paid plan except ZeroGPU (`09` §2) |
-| 9 | `02-design-doc.md` §4.7, Design bullets | "Hosted on Hugging Face Spaces, on **CPU** (free tier). A 10M–30M parameter model runs acceptably on CPU." and "The model checkpoint and tokenizer are downloaded from the Hugging Face Hub when the app starts, not stored in the Git repository." | "Runs locally on the project machine (GPU if present, CPU otherwise; `09` §6.2 gives measured latencies). The model and tokenizer are read from local paths; an optional argument loads them from the Hub." |
-| 10 | `02-design-doc.md` §2, flow diagram line "G -->\|6. Demo\| H[Gradio app<br/>Hugging Face Spaces]" | "Hugging Face Spaces" | "local" |
-| 11 | `02-design-doc.md` §5, artifacts row "Final model" | location "Hugging Face Hub" | "`checkpoints/<run>/model_final.pt` (local); Hub optional" |
-| 12 | `README.md` | no demo section | a short section with the launch command and the screen recording or GIF (task 5) |
-| 13 | `CLAUDE.md` line 7 (flagged, not for me to edit) | "It ships with a Gradio demo on Hugging Face Spaces." | "It ships with a local Gradio demo; publishing on Hugging Face is optional." |
-| 14 | `08-testing-strategy.md` §5.4 and §5.3 | three demo tests; M5 test "on CPU under 10 seconds" | add the 14 tests of §8 above (the 13 approved by the author on 2026-10-10 for Part D, plus the CPU-warning test); change the M5 test to "default settings, 100-token prompt, on the project machine"; map UR1 to UR14 |
-| 15 | `08-testing-strategy.md` §6.5 (injection catalog) | 16 injections | add I-17 "limitations text removed or placed below the output" (test `test_limitations_text_is_shown_directly_above_the_output`) and I-18 "analytics left at the default" (test `test_demo_analytics_disabled`). **Approved by the author on 2026-10-10 for Part D** |
-| 16 | `requirements-dev.txt` (outside this task's allowed edits) | no gradio | add `gradio==6.30.0` |
-| 17 | `01-prd.md` M6 and `02-design-doc.md` §3 (diagram count) | "14 diagrams" | running list: 3 + 3 + 2 + 2 + 2 (this document) = 12 |
+Before Part D: not applied; listed for Part D.
+
+| # | Document | Old | New | Part D status |
+|---|---|---|---|---|
+| 1 | `01-prd.md` G5 | "Deploy a public interactive demo that anyone can use without installing anything." | "Provide an interactive demo (Gradio) that runs locally on the project machine. Publishing it publicly is an optional step after v1 (`09-ui-spec.md` §9)." | Applied (PD-03) |
+| 2 | `01-prd.md` M5 | "Demo availability / Publicly accessible demo that returns a continuation in under 10 seconds *(provisional)*" | "Demo responsiveness / The local demo returns a continuation in under 10 seconds for prompts up to 100 tokens on the project machine" (the author's wording; default settings, `09` §6.2) | Applied (PD-08) |
+| 3 | `01-prd.md` §8, deliverable 5 | "**Live demo** on Hugging Face Spaces (Gradio)." | "**Local demo** (Gradio), with a short screen recording or GIF in the README. Publishing on Hugging Face Spaces is optional." | Applied (PD-11) |
+| 4 | `01-prd.md` §8, deliverable 4 | "**Trained model checkpoint**, published on the Hugging Face Hub." | "**Trained model checkpoint**. Publishing it on the Hugging Face Hub (model repository only, no Space) is optional." | Applied (PD-10) |
+| 5 | `01-prd.md` §1, summary | "…evaluation, and deployment as a public demo." | "…evaluation, and a local demo." | Applied (PD-02) |
+| 6 | `01-prd.md` §5, audience row for hiring managers | "A clear README, a working demo link, readable docs, and evidence of sound engineering judgment." | "A clear README with a screen recording of the demo, readable docs, and evidence of sound engineering judgment." | Applied (PD-04) |
+| 7 | `01-prd.md` §11, row "Demo hosting details and response-time target" | listed as open, resolved in `09-ui-spec.md` | resolved: local demo; response-time target in M5 | Applied (PD-14) |
+| 8 | `02-design-doc.md` D7 | "Gradio demo on Hugging Face Spaces (CPU)" with "free hosting" as a reason | "Gradio demo, run locally; Hugging Face Spaces (ZeroGPU) optional after v1". Reason: Gradio Spaces need a paid plan except ZeroGPU (`09` §2) | Applied (PD-28) |
+| 9 | `02-design-doc.md` §4.7, Design bullets | "Hosted on Hugging Face Spaces, on **CPU** (free tier). A 10M–30M parameter model runs acceptably on CPU." and "The model checkpoint and tokenizer are downloaded from the Hugging Face Hub when the app starts, not stored in the Git repository." | "Runs locally on the project machine (GPU if present, CPU otherwise; `09` §6.2 gives measured latencies). The model and tokenizer are read from local paths; an optional argument loads them from the Hub." | Applied (PD-29) |
+| 10 | `02-design-doc.md` §2, flow diagram line "G -->\|6. Demo\| H[Gradio app<br/>Hugging Face Spaces]" | "Hugging Face Spaces" | "local" | Applied (PD-30) |
+| 11 | `02-design-doc.md` §5, artifacts row "Final model" | location "Hugging Face Hub" | "`checkpoints/<run>/model_final.pt` (local); Hub optional" | Applied (PD-31) |
+| 12 | `README.md` | no demo section | a short section with the launch command and the screen recording or GIF (task 5) | Applied (PD-62) |
+| 13 | `CLAUDE.md` line 7 (flagged, not for me to edit) | "It ships with a Gradio demo on Hugging Face Spaces." | "It ships with a local Gradio demo; publishing on Hugging Face is optional." | Left to the author (CL-1); the author applies it in `CLAUDE.md` |
+| 14 | `08-testing-strategy.md` §5.4 and §5.3 | three demo tests; M5 test "on CPU under 10 seconds" | add the 14 tests of §8 above (the 13 approved by the author on 2026-10-10 for Part D, plus the CPU-warning test); change the M5 test to "default settings, 100-token prompt, on the project machine"; map UR1 to UR14 | Applied (PD-57) |
+| 15 | `08-testing-strategy.md` §6.5 (injection catalog) | 16 injections | add I-17 "limitations text removed or placed below the output" (test `test_limitations_text_is_shown_directly_above_the_output`) and I-18 "analytics left at the default" (test `test_demo_analytics_disabled`). **Approved by the author on 2026-10-10 for Part D** | Applied (PD-58) |
+| 16 | `requirements-dev.txt` (outside this task's allowed edits) | no gradio | add `gradio==6.30.0` | Applied (PD-64) |
+| 17 | `01-prd.md` M6 and `02-design-doc.md` §3 (diagram count) | "14 diagrams" | running list: 3 + 3 + 2 + 2 + 2 (this document) = 12 | Superseded by PD-09 (final total 14 diagrams) |
 
 ## 13. Diagrams this document needs
 

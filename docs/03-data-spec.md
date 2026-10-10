@@ -5,7 +5,7 @@
 | **Project** | mini-arabic-gpt |
 | **Status** | Corpus selected (ADR-0001) |
 | **Version** | 0.2 |
-| **Last updated** | 2026-10-08 |
+| **Last updated** | 2026-10-10 |
 | **Depends on** | `01-prd.md`, `02-design-doc.md` §4.1 |
 
 ## 1. Purpose
@@ -19,7 +19,7 @@ It is written in two passes. **Pass 1** fixed the requirements, the candidate co
 | ID | Requirement | Source |
 |---|---|---|
 | DR1 | Modern Standard Arabic. Dialects are out of scope. | PRD NG1 |
-| DR2 | License permits use for training and for a public demo. | PRD §9 |
+| DR2 | License permits use for training and for the demo (public if it is published). | PRD §9 |
 | DR3 | Free to download, no account-gated or paid sources. | PRD §9 |
 | DR4 | Enough tokens for the target model size (see §3). | PRD NFR2 |
 | DR5 | Downloadable and processable on the project machine (16 GB RAM, ~100 GB free disk). | PRD §9 |
@@ -37,6 +37,8 @@ It is written in two passes. **Pass 1** fixed the requirements, the candidate co
 
 **Target: 400M–800M training tokens.** This covers a 20M-parameter model comfortably and a 30M model at the minimum.
 
+**Measured later (added 2026-10-10):** this target is not reachable from cleaned Wikipedia alone. The train split holds about 328M tokens at a vocabulary of 16,000 entries (about 301M at 32,000). The project accepts 2 epochs over it as a guideline (`05-model-architecture.md` §6.3, `adr/0001-training-corpus.md` Amendment 1).
+
 **Converting text size to tokens:** Arabic tokenizes less efficiently than English. As a working assumption, one Arabic word produces **about 1.5–2.5 subword tokens**, depending on the tokenizer and vocabulary size. So 400M tokens is roughly **160M–270M words**, or about **1.5–2.5 GB of UTF-8 text** (Arabic characters take 2 bytes each). **This assumption is provisional** and will be replaced by a measured value once the tokenizer is trained (`04-tokenizer-spec.md`).
 
 **Training budget check:** PRD M3 limits a training run to 6 hours. The number of tokens the model can actually process in 6 hours is estimated in `06-training-plan.md`. If it is lower than the dataset size, the dataset is not the bottleneck and we simply train on a subset. More data than we can consume is not a problem; too little is.
@@ -52,7 +54,7 @@ It is written in two passes. **Pass 1** fixed the requirements, the candidate co
 | **Language** | MSA, consistent | Mostly MSA; the `arb_Arab` config is already language-filtered, but some dialect and noise is expected |
 | **Expected strengths** | Clean, well-formed, consistent; easy to download in full | Diverse writing styles and topics; very large |
 | **Expected weaknesses** | Single style (encyclopedic); many short stub articles, lists, and tables; may be below the token target after cleaning | Web noise (boilerplate, ads, navigation text); quality varies; needs more filtering |
-| **Figures verified** | Article count: 1,219,201 (measured). Word count after cleaning: ≈214M (estimate from the full set, §7) | Shard size: 1.67–4.84 GB. Documents in shard `000_00000`: 2,693,000 (measured). Noise rate: see §7 |
+| **Figures verified** | Article count: 1,219,201 (measured). Word count after cleaning: 207,947,124 in 480,404 articles (measured on the full set, §7) | Shard size: 1.67–4.84 GB. Documents in shard `000_00000`: 2,693,000 (measured). Noise rate: see §7 |
 
 **A third option** is a **mix** of both: Wikipedia for a clean base plus a FineWeb-2 subset for diversity. This is considered after inspecting each one separately.
 
@@ -125,7 +127,7 @@ Raw numbers are misleading before cleaning, so the §8 filters were applied to t
 
 - **Why documents were removed:** Wikipedia, 65 documents, 62 of them flagged by the length filter (a document can trigger more than one filter). FineWeb-2, 2 documents, both by the boilerplate filter, both rated noisy.
 - **Uncertainty:** the 95% Wilson intervals for the clean share among retained documents are 81–98% (Wikipedia) and 63–80% (FineWeb-2). They do not overlap, but each rests on 100 documents and one rater per corpus (different raters, so criteria may differ slightly).
-- **Wikipedia after cleaning, full set:** 273.8M raw words in 1,219,201 articles. After stripping the trailing sections and keeping articles with at least 50 remaining words: **≈214.1M words in 490,832 articles** (40.3% of articles, 78.2% of raw words). At 1.5–2.5 tokens per word (provisional, §3) this is ≈321–535M tokens.
+- **Wikipedia after cleaning, full set:** 273.8M raw words in 1,219,201 articles. After stripping the trailing sections and keeping articles with at least 50 remaining words: **≈214.1M words in 490,832 articles** (40.3% of articles, 78.2% of raw words). This applies only step 3a of §8 and the length filter. With the remaining cleaning and deduplication steps (§8, §9) the full-set count is **480,404 articles and 207,947,124 words**. At the measured 1.4755 tokens per word (vocabulary of 32,000) this is about 307M tokens in total and about 301M in the train split; at 1.6073 tokens per word (vocabulary of 16,000) the train split holds about 328.0M tokens. These ratios are preliminary (`05-model-architecture.md` §6, `06-training-plan.md` §7). The earlier range of 1.5–2.5 tokens per word (§3) gave ≈321–535M tokens.
 - **FineWeb-2 after cleaning, shard `000_00000`:** ≈1.3B words (estimate: 513.7 mean words × 2,693,000 documents ≈ 1.38B raw words, with about 98% of documents retained in the simulation). Not computed on the full shard.
 - **Reproducibility:** this simulation and the Wikipedia full-set word counts were computed with ad hoc analysis scripts that are not in the repository. The figures are to be re-derived from the per-filter counts logged by `scripts/prepare_data.py` (§8, §11).
 
@@ -176,10 +178,10 @@ Deduplication must run before splitting. Otherwise, copies of the same document 
 |---|---|---|
 | train | 98% | Tokenizer training, model training |
 | val | 1% | Loss monitoring during training; all tuning decisions |
-| test | 1% | Final evaluation only (PRD M1), never used for tuning |
+| test | 1% | Final evaluation only (PRD M1), never used for tuning. It also supplies the openings of 30 of the 50 prompts for the human rating (`07-evaluation-plan.md` §5); nothing is tuned on them |
 
 - **Unit:** the whole document. No document is divided across splits.
-- **Method:** shuffle document IDs with a fixed seed (`seed: 42` in `configs/data.yaml`), then slice.
+- **Method:** sort the document IDs, shuffle them with a generator seeded by the fixed seed (`seed: 42` in `configs/data.yaml`), then slice the shuffled list into 98% / 1% / 1%. The same IDs and seed always give the same split, which the determinism and proportion tests assert (`08-testing-strategy.md`).
 - **Why 98/1/1:** at hundreds of millions of tokens, 1% is already millions of tokens, more than enough for a stable perplexity estimate. Keeping train as large as possible matters more.
 - **Integrity check:** a test asserts that the sets of document hashes in the three splits are pairwise disjoint (`08-testing-strategy.md`).
 
@@ -203,7 +205,7 @@ Token counts are added after the tokenizer is trained.
 | Path | Content | Format | In Git? |
 |---|---|---|---|
 | `data/raw/<corpus>/` | Downloaded shards, unmodified | Parquet | No |
-| `data/clean/{train,val,test}.txt` | One document per block, documents separated by a blank line, UTF-8 with `\n` line endings | Text | No |
+| `data/clean/{train,val,test}.jsonl` | One JSON object per line with the fields `id` and `text`, UTF-8 with `\n` line endings (§8 step 3 keeps blank lines inside documents, so a blank-line separator cannot represent every document) | JSON Lines | No |
 | `data/clean/stats.json` | Pipeline statistics (§11) | JSON | No; copied into docs |
 | `data/clean/manifest.json` | Source corpus, shard names, download date, config hash, seed | JSON | No; copied into docs |
 
@@ -218,7 +220,7 @@ Token counts are added after the tokenizer is trained.
 | Language filter is character-based, not a real language ID | Some dialect passes through | Acceptable; dialect share is estimated during manual reading |
 | Thresholds in §8 are guesses until inspected | Over- or under-filtering | Tuned on the sample; every change recorded with its reason |
 | Windows default encoding corrupts Arabic | Silent data corruption | Every file open uses `encoding="utf-8"` (CLAUDE.md rule) |
-| Cleaned Wikipedia yields an estimated 321–535M tokens (≈214M words at 1.5–2.5 tokens per word, provisional ratio): the low end is below the 400M floor of the §3 target | Supports only ≈16–26M parameters at 20 tokens per parameter, with little margin for the upper end of the PRD range (30M) | Choose model size from the token count measured after the tokenizer is trained (`05-model-architecture.md`). Revisit the corpus choice if tokens per word is below 1.5 or the training budget needs more data (`adr/0001-training-corpus.md`). FineWeb-2 is held in reserve |
+| Cleaned Wikipedia yields about 307M tokens in total (480,404 articles, 207,947,124 words; about 301M in the train split at 1.4755 tokens per word with 32,000 entries, 328.0M at 1.6073 with 16,000; preliminary ratios; the earlier estimate was ≈321–535M at 1.5–2.5 tokens per word): below the 400M floor of the §3 target | Supports about 15M (301M tokens at 32,000 entries) to 16M (328.0M at 16,000) parameters at 20 tokens per parameter, below the 16.97M of `base` and far below the upper end of the PRD range (30M); the first estimate was ≈16–26M. Two epochs (38.7 tokens per parameter for `base`) are accepted instead (`05-model-architecture.md` §6.3) | Choose model size from the token count measured after the tokenizer is trained (`05-model-architecture.md`). Revisit the corpus choice if tokens per word is below 1.5 or the training budget needs more data (`adr/0001-training-corpus.md`). FineWeb-2 is held in reserve |
 | Bot-generated template articles survive cleaning (for example US census-place articles such as document 75 of the Wikipedia reading sample: repeated demographic sentences, missing units, numeric artifacts such as `128.93040000000002`) | Model may generate repetitive, template-like text; near-deduplication (§9) may not catch them because the numbers differ | Not quantified: the share of such articles in the corpus is unknown. Watch for it in the pilot run and in the qualitative evaluation (`07-evaluation-plan.md`); add template-aware filtering if it appears |
 | Whether the CC BY-SA 3.0 share-alike condition applies to model weights trained on Wikipedia text is unresolved (no legal review; not verified) | Licensing of the released checkpoint | Release the weights under CC BY-SA with attribution to Arabic Wikipedia |
 

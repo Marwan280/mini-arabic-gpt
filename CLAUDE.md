@@ -4,11 +4,11 @@ Guidance for Claude Code when working in this repository. Read this fully at the
 
 ## Project
 
-**mini-arabic-gpt**: a small GPT-style language model built from scratch in PyTorch and trained on Arabic text. It ships with a Gradio demo on Hugging Face Spaces.
+**mini-arabic-gpt**: a small GPT-style language model built from scratch in PyTorch and trained on Arabic text. It ships with a local Gradio demo; publishing to Hugging Face Spaces is optional after v1.
 
 - **Purpose:** a portfolio project for applying to AI/ML engineering roles. Correctness, clarity, and documented reasoning matter more than speed or feature count.
 - **Approach:** docs-first. Every component is specified in `docs/` before any code is written for it.
-- **Timeline:** 3 weeks, started 2026-10-02, target completion 2026-10-23.
+- **Timeline:** 3 weeks, started 2026-10-02, target completion 2026-10-26 (moved from 10-23; see docs/11-roadmap.md §2.1).
 
 ## Current phase
 
@@ -59,7 +59,7 @@ Most bugs in this project will not raise errors. Code will run and produce wrong
 - **Causal masking:** the model must never see future tokens. Any attention change requires a test proving this.
 - **Overfit first:** before any full training run, confirm the model can overfit a single small batch to near-zero loss.
 - **No data leakage:** split train/val/test before training the tokenizer. Train the tokenizer on the train split only. Deduplicate across splits.
-- **Comparable metrics:** perplexity is only comparable between runs using the same tokenizer and the same eval set. Never compare across them.
+- **Comparable metrics:** perplexity is only comparable between runs using the same tokenizer and the same eval set. Never compare across them. Loss per word and bits per UTF-8 byte, computed on the same text with a tokenizer-independent denominator, may be compared across tokenizers.
 - **Reproducibility:** set and log random seeds. Save the full config with every training run and checkpoint.
 - **Memory first:** before proposing a model size or batch size, estimate VRAM usage and show the calculation.
 - **Suspicious results are bugs until proven otherwise.** If a loss drops too fast or a metric looks too good, investigate before celebrating.

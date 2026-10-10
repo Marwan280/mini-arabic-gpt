@@ -5,7 +5,7 @@
 | **Project** | mini-arabic-gpt |
 | **Status** | Draft, pending ADR-0006 |
 | **Version** | 0.1 |
-| **Last updated** | 2026-10-09 |
+| **Last updated** | 2026-10-10 |
 | **Depends on** | `01-prd.md` (FR1 to FR8, NFR1 to NFR5, M3 to M5), `02-design-doc.md` §8, §9, D9, `03-data-spec.md` §8 to §10, §12, `04-tokenizer-spec.md` §2, §10, `05-model-architecture.md` §2, §9, `06-training-plan.md` §2, §8, `07-evaluation-plan.md` §2, §8, `docs/adr/0001-training-corpus.md` to `docs/adr/0005-evaluation-protocol.md` |
 | **Feeds** | `09-ui-spec.md` (demo tests), `11-roadmap.md` (test-first schedule, injection runs, gates) |
 
@@ -46,7 +46,7 @@ Status: **Decided** = decided with the author (planning questions Q1 to Q4 and t
 | X5 | Traceability matrix instead of a coverage percentage | Decided (Q2) | §5.3 |
 | X6 | Fixtures: synthetic Arabic file plus hand-derived rule table, both committed; real-data checks behind `data`; the fixture is reviewed by Marwan or Ghada (native speakers) before the tokenizer code is merged | Decided (Q3; reviewer set by the author) | §7 |
 | X7 | Bug injections are exact find-and-replace anchors applied to a temporary copy by a runner, driven by a manifest (not diff patch files); production code contains no injection switches | Decided (author: anchors) | §6.2 |
-| X8 | Sixteen injections specified and all sixteen detected by the prototype | Provisional (production re-run) | §6.5 |
+| X8 | Eighteen injections specified; the first sixteen were detected by the prototype, I-17 and I-18 (added in Part D) have not been run | Provisional (production re-run) | §6.5 |
 | X9 | Exact equality for determinism tests on the project machine; `torch.testing.assert_close` with an explicit tolerance for anything else | Provisional | §4.4 |
 | X10 | Local only now; CI deferred | Decided (Q1c) | §4.5 |
 | X11 | Gates: G1 before any training, G2 before the main run, G3 before the test split is read | Decided | §5.2 |
@@ -62,7 +62,7 @@ Status: **Decided** = decided with the author (planning questions Q1 to Q4 and t
 | gpu | `gpu` | base-size mask and shape check, GPU overfit, autocast dtypes, memory budget | CUDA; skipped otherwise | base-size shapes and mask 0.95 s; GPU overfit 4.0 s |
 | data | `data` | round trip on real documents, token-file bounds, memory of the baseline count store | the real data files; skipped when absent | 3 tests in 8.0 s (round trip of 600 real documents 5.1 s) |
 
-Whole prototype suite, all tiers: 68 passed and 1 expected failure in 21.3 s. The production suite will have more tests than the prototype (91 planned, 36 prototyped; one row stands for several parametrized cases), so the fast tier is expected to grow; a plain estimate of 2 to 4 times the prototype's 6 s still leaves it under 60 s, and the budget is re-checked whenever a test is added (§9).
+Whole prototype suite, all tiers: 68 passed and 1 expected failure in 21.3 s. The production suite will have more tests than the prototype (102 planned after Part D, 91 in the first draft; 36 prototyped; one row stands for several parametrized cases), so the fast tier is expected to grow; a plain estimate of 2 to 4 times the prototype's 6 s still leaves it under 60 s, and the budget is re-checked whenever a test is added (§9).
 
 ### 4.2 Commands
 
@@ -111,12 +111,12 @@ Local only (author's decision). The fast tier runs before every commit. A GitHub
 | Gate | When | What must pass |
 |---|---|---|
 | **G1** | before any training run (the pilot included) | all tiers except `data`; the injections I-01 to I-05, I-10, I-13, I-14; the existing `scripts/inspect_data.py` guard test |
-| **G2** | before the main run | everything, including `data`; all sixteen injections; the pilot gates of `06` §6 (P-a to P-d) |
+| **G2** | before the main run | everything, including `data`; the G1 injection subset (I-01 to I-05, I-10, I-13, I-14), the other injections running when capacity allows (`11-roadmap.md`, Tier C cut); the pilot gates of `06` §6 (P-a to P-d) |
 | **G3** | before the test split is read | the evaluation tests of `07` §8; the injections I-11, I-12, I-15, I-16; rubric and prompt files frozen and hashed |
 
 ### 5.3 Traceability
 
-The matrix below maps every requirement identifier of documents 01 to 07 (and the tests promised by Design §8 and §9) to the tests that check it. The rule (TS4): a requirement has at least one named test, or is documentary with a reason. 70 identifiers: 66 have tests, 4 are documentary, 0 are gaps.
+The matrix below maps every requirement identifier of documents 01 to 07 (and the tests promised by Design §8 and §9) to the tests that check it. The rule (TS4): a requirement has at least one named test, or is documentary with a reason. 84 identifiers (70 of documents 01 to 07 and 14 of `09`): 77 have tests, 7 are documentary, 0 are gaps.
 
 | Requirement | Meaning | Tests (or why none) |
 |---|---|---|
@@ -127,7 +127,7 @@ The matrix below maps every requirement identifier of documents 01 to 07 (and th
 | FR5 | Checkpoints, metrics, full config per run | `test_resume_reproduces_the_next_steps`; `test_config_and_seed_saved_with_every_checkpoint`; `test_metrics_jsonl_schema` |
 | FR6 | Test perplexity for model and baseline | `test_loss_per_token_matches_hand_computation`; `test_kn_probabilities_sum_to_one` |
 | FR7 | Generation with temperature and length | `test_generation_uses_only_the_last_context_length_tokens`; `test_same_seed_same_continuation`; `test_top_k_restricts_the_support`; `test_temperature_limit_matches_argmax`; `test_stops_at_endoftext_and_respects_max_new_tokens` |
-| FR8 | Demo shows continuation and tokenization | `test_demo_returns_continuation_and_tokenization_for_a_prompt`; `test_demo_uses_the_same_generate_and_tokenizer_as_the_pipeline` |
+| FR8 | Demo shows continuation and tokenization | `test_same_seed_same_output_through_the_app`; `test_token_view_matches_the_tokenizer` |
 | NFR1 | UTF-8 explicit everywhere | `test_clean_files_are_utf8_lf`; `test_utf8_file_io_preserves_arabic` |
 | NFR2 | 10M to 30M parameters | `test_param_count_matches_formula`; `test_head_is_tied_to_embedding` |
 | NFR3 | Peak training memory within 8 GB | `test_eval_batch_keeps_reserved_memory_under_budget`; `test_micro_batch_16_step_fits_in_7_gib` |
@@ -135,7 +135,7 @@ The matrix below maps every requirement identifier of documents 01 to 07 (and th
 | NFR5 | Mask test and overfit test exist | `test_causal_mask_future_tokens_do_not_change_past_logits`; `test_overfit_single_batch_cpu` |
 | M3 | Training run under 6 h and 8 GB | measured in the pilot and the main run logs (06 §6 gates); not an automated test |
 | M4 | Run re-executable from config and seed | `test_same_seed_gives_identical_losses`; `test_config_and_seed_saved_with_every_checkpoint` |
-| M5 | Demo answers in under 10 s | `test_demo_latency_on_cpu_under_10_seconds` (provisional target) |
+| M5 | Local demo answers in under 10 s (default settings, prompt up to 100 tokens, project machine) | `test_default_settings_complete_under_10_s_for_a_100_token_prompt` (provisional target) |
 | TR1 | Tokenizer trained on train only | `test_tokenizer_trains_on_train_split_only` |
 | TR2 | Vocabulary at most 65,535 | `test_uint16_bound_raises_on_overflow`; `test_token_file_ids_in_bounds_one_eos_per_document` |
 | TR3 | Normalization inside the tokenizer object | `test_normalization_rule`; `test_encode_applies_normalization` |
@@ -188,14 +188,28 @@ The matrix below maps every requirement identifier of documents 01 to 07 (and th
 | DS9-6 | Design §9: different normalization at training and inference | `test_encode_applies_normalization` |
 | DS9-7 | Design §9: perplexity across tokenizers | `test_tokenizer_file_hash_recorded`; `test_metric_comparison_refuses_different_tokenizers` |
 | DS9-8 | Design §9: training silently on CPU | `test_training_refuses_to_run_without_cuda` |
-| DR2 | Licence permits training and public demo | recorded in ADR-0001 and the Data Spec |
+| DR2 | Licence permits training and the demo (public if published) | recorded in ADR-0001 and the Data Spec |
 | DR3 | Free, no account-gated source | recorded in ADR-0001 |
+| UR1 | Demo runs locally on 127.0.0.1, no public link (`09` §3) | `test_demo_binds_to_loopback_only` |
+| UR2 | Demo shows the normalized prompt and the tokenization | `test_token_view_matches_the_tokenizer` |
+| UR3 | The user can set temperature, top-k, maximum new tokens, and a seed | interface controls, seen in the demo walkthrough; the seed control is exercised by `test_same_seed_same_output_through_the_app` |
+| UR4 | Prompt not empty, at most 100 tokens; at most 200 new tokens | `test_empty_prompt_rejected_with_message`; `test_prompt_of_101_tokens_rejected_100_accepted` |
+| UR5 | Default settings, prompt up to 100 tokens: complete in under 10 s on the project machine | `test_default_settings_complete_under_10_s_for_a_100_token_prompt` |
+| UR6 | Limitations text directly above the output, shared with the Model Card | `test_limitations_text_is_shown_directly_above_the_output`; `test_limitations_file_text_equals_the_model_card_quote` |
+| UR7 | No prompt or output written to disk; no Gradio telemetry | `test_demo_analytics_disabled`; `test_no_files_written_during_generation` |
+| UR8 | Same tokenizer object and generate function as the evaluation | `test_token_view_matches_the_tokenizer` |
+| UR9 | Generation streams, and Stop cancels it | `test_streaming_yields_partial_text_before_completion` |
+| UR10 | Example buttons offer six approved prompts | the prompts are the approved list of `07` Appendix B, frozen and hashed at G3 |
+| UR11 | Prompt and output fields are right-to-left | `test_prompt_and_output_fields_are_rtl` |
+| UR12 | CUDA when available, CPU otherwise; CPU warning above 100 new tokens | `test_device_is_cuda_when_available_else_cpu`; `test_cpu_warning_shown_above_100_new_tokens` |
+| UR13 | Same prompt, settings, and seed give the same continuation | `test_same_seed_same_output_through_the_app` |
+| UR14 | The README carries a screen recording or GIF | a README deliverable (task G19 of `11`), not behaviour |
 
-The four documentary rows cannot be an automated test: the 6-hour training time and the licence checks are facts about a run or a document, and EV8 is this inventory itself.
+The seven documentary rows cannot be an automated test: the 6-hour training time and the licence checks are facts about a run or a document, EV8 is this inventory itself, and UR3, UR10, and UR14 are interface content or README content (the reasons are in the rows; the three UR reasons were written in Part D and are provisional).
 
 ### 5.4 Test inventory
 
-91 planned tests (parametrized cases count once). "Prototyped" means the prototype contains a version of the test and it passed on the correct code and failed under the relevant injection.
+102 planned tests (91 in the first draft, where `test_app.py` had three tests; in Part D they were replaced by the 14 of `09` §8; parametrized cases count once). "Prototyped" means the prototype contains a version of the test and it passed on the correct code and failed under the relevant injection.
 
 | File | Test | Tier | Prototyped |
 |---|---|---|---|
@@ -287,9 +301,20 @@ The four documentary rows cannot be an automated test: the 6-hour training time 
 | `test_generate.py` | `test_top_k_restricts_the_support` | fast | no |
 | `test_generate.py` | `test_temperature_limit_matches_argmax` | fast | no |
 | `test_generate.py` | `test_stops_at_endoftext_and_respects_max_new_tokens` | fast | no |
-| `test_app.py` | `test_demo_returns_continuation_and_tokenization_for_a_prompt` | slow | no |
-| `test_app.py` | `test_demo_uses_the_same_generate_and_tokenizer_as_the_pipeline` | fast | no |
-| `test_app.py` | `test_demo_latency_on_cpu_under_10_seconds` | slow | no |
+| `test_app.py` | `test_demo_binds_to_loopback_only` | slow | no |
+| `test_app.py` | `test_demo_analytics_disabled` | fast | no |
+| `test_app.py` | `test_empty_prompt_rejected_with_message` | slow | no |
+| `test_app.py` | `test_prompt_of_101_tokens_rejected_100_accepted` | slow | no |
+| `test_app.py` | `test_limitations_text_is_shown_directly_above_the_output` | fast | no |
+| `test_app.py` | `test_limitations_file_text_equals_the_model_card_quote` | fast | no |
+| `test_app.py` | `test_prompt_and_output_fields_are_rtl` | fast | no |
+| `test_app.py` | `test_same_seed_same_output_through_the_app` | slow | no |
+| `test_app.py` | `test_streaming_yields_partial_text_before_completion` | slow | no |
+| `test_app.py` | `test_token_view_matches_the_tokenizer` | fast | no |
+| `test_app.py` | `test_no_files_written_during_generation` | fast | no |
+| `test_app.py` | `test_device_is_cuda_when_available_else_cpu` | fast | no |
+| `test_app.py` | `test_cpu_warning_shown_above_100_new_tokens` | fast | no |
+| `test_app.py` | `test_default_settings_complete_under_10_s_for_a_100_token_prompt` | slow | no |
 
 ## 6. Bug-injection procedures
 
@@ -338,7 +363,7 @@ Each verification is recorded as: `INJ I-xx verified <date> at <commit>: detecte
 
 ### 6.5 Catalog
 
-Sixteen injections. "Run" is the prototype's whole suite (68 passing tests and one expected failure on the correct code) with the single defect active: only the listed tests failed, all others passed.
+Eighteen injections: I-01 to I-16 were run in the prototype, and I-17 and I-18 were added in Part D (2026-10-10) and have not been run. "Run" is the prototype's whole suite (68 passing tests and one expected failure on the correct code) with the single defect active: only the listed tests failed, all others passed.
 
 | ID | Defect injected | Silent failure | Tests that fail | Gate |
 |---|---|---|---|---|
@@ -358,6 +383,8 @@ Sixteen injections. "Run" is the prototype's whole suite (68 passing tests and o
 | I-14 | warmup off by one step | `06` §4.4 | lr-schedule test | G1 |
 | I-15 | rating-sheet id leaks the system | `07` §5.4 blinding | blinding test | G3 |
 | I-16 | bootstrap resamples the two systems independently | `07` §4.5 paired bootstrap | paired-bootstrap test | G3 |
+| I-17 | limitations text removed from the layout, or placed below the output | `09` §5.3, UR6 | limitations-above-output test | demo merge |
+| I-18 | telemetry left at the Gradio default (`analytics_enabled` not set to false) | `09` §7, UR7 | analytics test | demo merge |
 
 ### 6.6 Procedures
 
@@ -515,6 +542,26 @@ Each procedure gives: what to change in the production code (a description; the 
 | Prototype | detected; 1 failed, 67 passed, 1 expected failure |
 | Note | The first version of this test used per-document losses with a constant ratio to the word counts, so any resample gave the same ratio and only floating-point noise made the test fail. Running the injection exposed it; the test now uses losses that vary by document. A reminder that an injection run also tests the test |
 
+**I-17. Limitations text removed or placed below the output.** (Added in Part D, 2026-10-10; not run in the prototype.)
+
+| | |
+|---|---|
+| Change | In the app layout, move the limitations component after the output component, or delete it |
+| Must fail | `test_limitations_text_is_shown_directly_above_the_output` |
+| Expected message | `limitations text is not directly above the output` (proposed wording, to be fixed when the code exists) |
+| Must not fail | the other demo tests, except that deleting the component may also break `test_limitations_file_text_equals_the_model_card_quote` if that test reads the component |
+| Prototype | not run |
+
+**I-18. Telemetry left at the default.** (Added in Part D, 2026-10-10; not run in the prototype.)
+
+| | |
+|---|---|
+| Change | Remove the `analytics_enabled=False` argument from the Gradio app constructor (the Gradio default is to allow telemetry, `09` §7) |
+| Must fail | `test_demo_analytics_disabled` |
+| Expected message | `Gradio telemetry is enabled (analytics_enabled is not False)` (proposed wording, to be fixed when the code exists) |
+| Must not fail | the other demo tests |
+| Prototype | not run |
+
 ### 6.7 What running the injections showed
 
 - **Every injection was detected, and by the intended test.** In each run only the listed tests failed.
@@ -565,9 +612,9 @@ These are defects or traps found while writing the tests. None is applied to an 
 |---|---|
 | Fast tier under 60 s (X3) | The first complete fast tier; printed durations at G1 and G2 |
 | Exact equality for determinism on this machine (X9) | The production resume and same-seed tests; tolerance only if they fail for a measured reason |
-| Sixteen injections detected (X8) | Re-running the catalog on the production code at G1, G2, and G3 |
+| Eighteen injections detected (X8; sixteen detected in the prototype, I-17 and I-18 not yet run) | Re-running the catalog on the production code at G1, G2, and G3 |
 | Expected messages | The production tests; the manifest stores the final messages |
-| 91 planned tests and the matrix | Updated when the tests are written |
+| 102 planned tests and the matrix | Updated when the tests are written |
 
 ### 10.2 Open questions
 
@@ -578,18 +625,20 @@ These are defects or traps found while writing the tests. None is applied to an 
 
 ### 10.3 Proposed edits to earlier documents
 
-Not applied; listed for Part D.
+*Part D (2026-10-10): every row below has a status in the last column; "Applied" refers to the row identifiers of the Part D table (PD-nn), "Left to the author" rows are edits to `CLAUDE.md`.*
 
-| # | Document | Old | New |
-|---|---|---|---|
-| 1 | `03-data-spec.md` §12, `data/clean/{train,val,test}.txt` | "One document per block, documents separated by a blank line" | One JSON object per line (`id`, `text`), UTF-8, LF, as the rehearsals used; reason: Data Spec §8 step 3 keeps blank lines inside documents (finding F1). Also `data/clean/*.jsonl` in the storage table |
-| 2 | `03-data-spec.md` §10, Method | "shuffle document IDs with a fixed seed (`seed: 42`), then slice" | state the method used, or the hash-of-id method if that is chosen, so that the determinism test can assert it (F6) |
-| 3 | `02-design-doc.md` §8, table of required tests | seven tests | add the row "Bug-injection checks: each safeguard has a documented injection that a named test detects (`08` §6)"; D9 text: add "markers `slow`, `gpu`, `data`" |
-| 4 | `01-prd.md` NFR5 | "Core components are covered by automated tests, including a causal-masking test and a single-batch overfitting test." | add "and every requirement identifier is traceable to a test or marked documentary (`08` §5.3); the safeguards against silent failures are checked by bug-injection procedures (`08` §6)" |
-| 5 | `04-tokenizer-spec.md` §10, "Rule spot-checks" | "a unit test with one input and the expected output" | add "expected output derived by hand from §4/§5 (not from the code), see `08` §7" |
-| 6 | `requirements-dev.txt` (outside this task's allowed edits) | no pytest | add `pytest==9.1.1` (the version used for the prototype) |
-| 7 | `experiments/experiment-log.md` | — | **EXP-007 written** with the author's approval on 2026-10-09: two of my own tests were wrong on their first run (initial-loss test with unshifted-looking targets under a tied head; degenerate bootstrap data), found by running the correct code and the injections; fix: independent targets, per-document varying losses; lesson: run each test against the correct code and against its injection before trusting it |
-| 8 | `01-prd.md` M6 and `02-design-doc.md` §3 (diagram count) | "14 diagrams" | running list: 3 (doc 05) + 3 (doc 06) + 2 (doc 07) + 2 (doc 08) = 10 |
+Before Part D: not applied; listed for Part D.
+
+| # | Document | Old | New | Part D status |
+|---|---|---|---|---|
+| 1 | `03-data-spec.md` §12, `data/clean/{train,val,test}.txt` | "One document per block, documents separated by a blank line" | One JSON object per line (`id`, `text`), UTF-8, LF, as the rehearsals used; reason: Data Spec §8 step 3 keeps blank lines inside documents (finding F1). Also `data/clean/*.jsonl` in the storage table | Applied (PD-36) |
+| 2 | `03-data-spec.md` §10, Method | "shuffle document IDs with a fixed seed (`seed: 42`), then slice" | state the method used, or the hash-of-id method if that is chosen, so that the determinism test can assert it (F6) | Applied (PD-37) |
+| 3 | `02-design-doc.md` §8, table of required tests | seven tests | add the row "Bug-injection checks: each safeguard has a documented injection that a named test detects (`08` §6)"; D9 text: add "markers `slow`, `gpu`, `data`" | Applied (PD-27) |
+| 4 | `01-prd.md` NFR5 | "Core components are covered by automated tests, including a causal-masking test and a single-batch overfitting test." | add "and every requirement identifier is traceable to a test or marked documentary (`08` §5.3); the safeguards against silent failures are checked by bug-injection procedures (`08` §6)" | Applied (PD-15) |
+| 5 | `04-tokenizer-spec.md` §10, "Rule spot-checks" | "a unit test with one input and the expected output" | add "expected output derived by hand from §4/§5 (not from the code), see `08` §7" | Applied (PD-46) |
+| 6 | `requirements-dev.txt` (outside this task's allowed edits) | no pytest | add `pytest==9.1.1` (the version used for the prototype) | Applied (PD-64) |
+| 7 | `experiments/experiment-log.md` | — | **EXP-007 written** with the author's approval on 2026-10-09: two of my own tests were wrong on their first run (initial-loss test with unshifted-looking targets under a tied head; degenerate bootstrap data), found by running the correct code and the injections; fix: independent targets, per-document varying losses; lesson: run each test against the correct code and against its injection before trusting it | No action: EXP-007 written on 2026-10-09 |
+| 8 | `01-prd.md` M6 and `02-design-doc.md` §3 (diagram count) | "14 diagrams" | running list: 3 (doc 05) + 3 (doc 06) + 2 (doc 07) + 2 (doc 08) = 10 | Superseded by PD-09 (final total 14 diagrams) |
 
 ## 11. Tasks handed to `11-roadmap.md`
 
@@ -598,7 +647,7 @@ Not applied; listed for Part D.
 | 1 | Review of `tests/fixtures/sentences_ar.txt` (Appendix B) by Marwan or Ghada | the tokenizer code is merged |
 | 2 | Pin `pytest` in `requirements-dev.txt` | the first test is committed |
 | 3 | Write each component's tests first (inventory §5.4); Ghada owns them | the component is merged |
-| 4 | Implement the injection runner and manifest, with the exact `find` anchors, once the code exists; run all sixteen | gates G1 (subset), G2, G3 |
+| 4 | Implement the injection runner and manifest, with the exact `find` anchors, once the code exists; run the catalog (eighteen injections; the G1 subset first, the rest as capacity allows) | gates G1 (subset), G2, G3 |
 | 5 | Add the tests for the existing `scripts/inspect_data.py` guard | the next change to that script |
 | 6 | Print and review fast-tier durations at G1 and G2 | G1 |
 | 7 | Optional: a CPU-only GitHub Actions workflow for the fast tier | only if time remains |
@@ -657,7 +706,7 @@ The failing tests and messages of each run are quoted in §6.6. The first run of
 
 ### A.3 Traceability generator
 
-The inventory (§5.4) and the matrix (§5.3) are produced from one Python data structure (`trace_gen.py` in the scratchpad), so the counts in the text come from it: 91 tests (fast: 76, data: 4, slow: 4, gpu: 3, slow+gpu: 3, slow+data: 1); 70 requirement identifiers; 66 with tests; 4 documentary; 0 gaps.
+The inventory (§5.4) and the matrix (§5.3) are produced from one Python data structure (`trace_gen.py` in the scratchpad), so the counts in the text come from it: 91 tests (fast: 76, data: 4, slow: 4, gpu: 3, slow+gpu: 3, slow+data: 1); 70 requirement identifiers; 66 with tests; 4 documentary; 0 gaps. **Part D (2026-10-10)** changed the generator's data (the demo tests of `09` §8 instead of three, the 14 UR rows, the M5 and DR2 wording) and re-ran it: 102 tests (fast: 83, data: 4, slow: 8, gpu: 3, slow+gpu: 3, slow+data: 1); 84 requirement identifiers; 77 with tests; 7 documentary; 0 gaps. The matrix, the inventory, and these counts come from that run.
 
 ## Appendix B. Fixture and rule cases (draft, pending native-speaker review)
 

@@ -220,3 +220,4 @@ __marimo__/
 # Project data and model artifacts
 data/
 checkpoints/
+reports/eval/*/probes_full.md

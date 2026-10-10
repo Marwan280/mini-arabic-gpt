@@ -15,6 +15,8 @@ This document turns the specifications into a dated plan: who does what, in whic
 
 It makes no technical decision of its own. Every technical choice is in documents 03 to 10; this document only places them on the calendar.
 
+**Terms (added in Part D).** "Scratchpad pilot" means a throwaway experiment run in the session scratchpad before the production code exists: the vocabulary pilot of `06` §7 and the pilot model of `07`. "Production pilot" means the first run of the production code before the main run (`06` §6, gates P-a to P-d). In this document, "the pilot" means the production pilot.
+
 **Status of numbers.** The machine times are measured or computed in earlier documents (cited). The **hour estimates are Claude's**, for hand-written work by the person named, and were not measured: no production code exists yet. The size of the prototypes (60 to 180 lines for a model, a training loop, a baseline, or a demo) is the only anchor. Treat each estimate as plus or minus 50%. They are provisional and are re-checked at the checkpoints of §8.
 
 ## 2. Inputs
@@ -297,29 +299,29 @@ Every task row of `07` §12, `08` §11, `09` §10.3, and `10` §7 is scheduled b
 
 | Source | Task | Here |
 |---|---|---|
-| `07` §12.1 | native approval of prompts and probes | M19, G12 |
-| `07` §12.2 | memory-aware baseline count store | M11 |
-| `07` §12.3 | calibration round | M18, G14 |
-| `07` §12.4 | freeze and hash the evaluation code and config | M10 (done criterion), gate G3 |
-| `07` §12.5 | generate and rate | M17, M18, G14 |
-| `07` §12.6 | `.gitignore` entry for the full probe outputs | G01 |
-| `08` §11.1 | fixture review | M03, G02 |
-| `08` §11.2 | pin `pytest` | G01 |
-| `08` §11.3 | tests first | G03, M22, M06, G06, G09, G11 (others at Level 3) |
-| `08` §11.4 | injection runner and manifests | G08 (eight injections), G16 (the rest, Level 3) |
-| `08` §11.5 | tests for the `inspect_data.py` guard | G03 |
-| `08` §11.6 | print fast-tier durations at G1 and G2 | M08 (done criterion) |
-| `08` §11.7 | CI | G17 (Level 3) |
-| `09` §10.3.1 | review of the Arabic texts of the demo | M19, G12 |
-| `09` §10.3.2 | approve the example prompts | M19, G12 |
-| `09` §10.3.3 | write the app and its tests | G13 |
-| `09` §10.3.4 | pin `gradio` | G01 |
-| `09` §10.3.5 | recording or GIF | G19 |
-| `09` §10.3.6 | optional publication | deferred: after v1, not scheduled |
-| `10` §7.1 | complete the Model Card | M13, M14 |
-| `10` §7.2 | review of the Arabic texts and limitations | M19, G12 |
-| `10` §7.3 | decide on publishing the weights | deferred: after v1 |
-| `10` §7.4 | keep the licence block in step with ADR-0008 | M14 (done criterion) |
+| `07` §12, task 1 | native approval of prompts and probes | M19, G12 |
+| `07` §12, task 2 | memory-aware baseline count store | M11 |
+| `07` §12, task 3 | calibration round | M18, G14 |
+| `07` §12, task 4 | freeze and hash the evaluation code and config | M10 (done criterion), gate G3 |
+| `07` §12, task 5 | generate and rate | M17, M18, G14 |
+| `07` §12, task 6 | `.gitignore` entry for the full probe outputs | G01 |
+| `08` §11, task 1 | fixture review | M03, G02 |
+| `08` §11, task 2 | pin `pytest` | G01 |
+| `08` §11, task 3 | tests first | G03, M22, M06, G06, G09, G11 (others at Level 3) |
+| `08` §11, task 4 | injection runner and manifests | G08 (eight injections), G16 (the rest, Level 3) |
+| `08` §11, task 5 | tests for the `inspect_data.py` guard | G03 |
+| `08` §11, task 6 | print fast-tier durations at G1 and G2 | M08 (done criterion) |
+| `08` §11, task 7 | CI | G17 (Level 3) |
+| `09` §10.3, task 1 | review of the Arabic texts of the demo | M19, G12 |
+| `09` §10.3, task 2 | approve the example prompts | M19, G12 |
+| `09` §10.3, task 3 | write the app and its tests | G13 |
+| `09` §10.3, task 4 | pin `gradio` | G01 |
+| `09` §10.3, task 5 | recording or GIF | G19 |
+| `09` §10.3, task 6 | optional publication | deferred: after v1, not scheduled |
+| `10` §7, task 1 | complete the Model Card | M13, M14 |
+| `10` §7, task 2 | review of the Arabic texts and limitations | M19, G12 |
+| `10` §7, task 3 | decide on publishing the weights | deferred: after v1 |
+| `10` §7, task 4 | keep the licence block in step with ADR-0008 | M14 (done criterion) |
 | `04` §10 | tokenizer verification checks | M07 (done criterion) |
 | `04` §10 (as amended) | vocabulary re-confirmation on the production tokenizer | M23 (Level 3) |
 
@@ -347,19 +349,21 @@ Every task row of `07` §12, `08` §11, `09` §10.3, and `10` §7 is scheduled b
 
 ### 12.3 Proposed edits to earlier documents
 
-Not applied; they enter the Part D table.
+*Part D (2026-10-10): every row below has a status in the last column; "Applied" refers to the row identifiers of the Part D table (PD-nn), "Left to the author" rows are edits to `CLAUDE.md`.*
 
-| # | Document | Old | New |
-|---|---|---|---|
-| 1 | `08-testing-strategy.md` §5.2, gate G2 | "all sixteen injections" | "the G1 subset (I-01 to I-05, I-10, I-13, I-14); the other injections run when capacity allows (`11` §6)" |
-| 2 | `01-prd.md` §9, row "Time" | "3 weeks (2026-10-02 to 2026-10-23), ~90 working hours" | "2026-10-02 to 2026-10-26 (moved from 2026-10-23, `11` §2.1), ~90 working hours at the start; 2026-10-02 to 2026-10-10 were spent on the documents; 14 planned days and 96 stated hours remain for the build" |
-| 3 | `01-prd.md` §10, risk "Documentation phase overruns and squeezes build time" | listed as a risk with mitigation "time-box docs to 4–5 days" | record that the risk materialized: the documents took 9 days (`11` §2) |
-| 4 | `01-prd.md` M6 and `02-design-doc.md` §3, "14 diagrams" | "All 13 docs and 14 diagrams complete and consistent with the final code" | the running list of diagrams (§13 of each document) now totals 14 (3 + 3 + 2 + 2 + 2 + 2); the diagrams README should hold the list so that the count is checkable |
-| 5 | `README.md`, Contributors | roles by area (Ghada: testing) | add that the tokenizer tests are written by Marwan and the data and core evaluation tests by Ghada (`11` §7.2, P6) |
-| 6 | `CLAUDE.md`, "Current phase" (flagged, for the author) | "**Phase 1: Documentation.** The only code is the corpus inspection tooling … Do not create other code files, code folders, or configs until the relevant doc is approved and I ask for them." | "**Phase 2: Implementation** from 2026-10-12, test-first, following `docs/11-roadmap.md`; code folders are created as each component starts, on request" |
-| 7 | `CLAUDE.md`, "Repository layout" (flagged) | the layout of Phase 1 | add `src/`, `tests/`, `app/`, `configs/`, `artifacts/`, `reports/eval/` as they are created |
-| 8 | `CLAUDE.md`, "Project" (flagged, for the author) | "**Timeline:** 3 weeks, started 2026-10-02, target completion 2026-10-23." | "…target completion 2026-10-26 (moved from 2026-10-23, `docs/11-roadmap.md` §2.1)." |
-| 9 | `01-prd.md` §3 and header or any other statement of the 2026-10-23 date | any "2026-10-23" | the consistency pass (Part D) searches every document for the old date and lists each occurrence for the author |
+Before Part D: not applied; they enter the Part D table.
+
+| # | Document | Old | New | Part D status |
+|---|---|---|---|---|
+| 1 | `08-testing-strategy.md` §5.2, gate G2 | "all sixteen injections" | "the G1 subset (I-01 to I-05, I-10, I-13, I-14); the other injections run when capacity allows (`11` §6)" | Applied (PD-56) |
+| 2 | `01-prd.md` §9, row "Time" | "3 weeks (2026-10-02 to 2026-10-23), ~90 working hours" | "2026-10-02 to 2026-10-26 (moved from 2026-10-23, `11` §2.1), ~90 working hours at the start; 2026-10-02 to 2026-10-10 were spent on the documents; 14 planned days and 96 stated hours remain for the build" | Applied (PD-12) |
+| 3 | `01-prd.md` §10, risk "Documentation phase overruns and squeezes build time" | listed as a risk with mitigation "time-box docs to 4–5 days" | record that the risk materialized: the documents took 9 days (`11` §2) | Applied (PD-13) |
+| 4 | `01-prd.md` M6 and `02-design-doc.md` §3, "14 diagrams" | "All 13 docs and 14 diagrams complete and consistent with the final code" | the running list of diagrams (§13 of each document) now totals 14 (3 + 3 + 2 + 2 + 2 + 2); the diagrams README should hold the list so that the count is checkable | Applied (PD-09, PD-32, PD-65) |
+| 5 | `README.md`, Contributors | roles by area (Ghada: testing) | add that the tokenizer tests are written by Marwan and the data and core evaluation tests by Ghada (`11` §7.2, P6) | Applied (PD-62) |
+| 6 | `CLAUDE.md`, "Current phase" (flagged, for the author) | "**Phase 1: Documentation.** The only code is the corpus inspection tooling … Do not create other code files, code folders, or configs until the relevant doc is approved and I ask for them." | "**Phase 2: Implementation** from 2026-10-12, test-first, following `docs/11-roadmap.md`; code folders are created as each component starts, on request" | Left to the author (CL-3), after the merge of the documents |
+| 7 | `CLAUDE.md`, "Repository layout" (flagged) | the layout of Phase 1 | add `src/`, `tests/`, `app/`, `configs/`, `artifacts/`, `reports/eval/` as they are created | Left to the author (CL-4), after the merge of the documents |
+| 8 | `CLAUDE.md`, "Project" (flagged, for the author) | "**Timeline:** 3 weeks, started 2026-10-02, target completion 2026-10-23." | "…target completion 2026-10-26 (moved from 2026-10-23, `docs/11-roadmap.md` §2.1)." | Left to the author (CL-2); the author applies it in `CLAUDE.md` |
+| 9 | `01-prd.md` §3 and header or any other statement of the 2026-10-23 date | any "2026-10-23" | the consistency pass (Part D) searches every document for the old date and lists each occurrence for the author | No action: the old date remains only in PRD §9 (PD-12) and `CLAUDE.md` (CL-2); the roadmap, ADR-0009, and EXP-009 cite it as history |
 
 ## 13. Diagrams this document needs
 

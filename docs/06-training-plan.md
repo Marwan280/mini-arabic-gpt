@@ -5,7 +5,7 @@
 | **Project** | mini-arabic-gpt |
 | **Status** | Draft, pending ADR-0004 |
 | **Version** | 0.1 |
-| **Last updated** | 2026-10-09 |
+| **Last updated** | 2026-10-10 |
 | **Depends on** | `01-prd.md` (M3, M4, NFR3), `02-design-doc.md` §4.4, §7, §9, D3, D4, D5, `03-data-spec.md` §10, `04-tokenizer-spec.md` §10, `05-model-architecture.md` (parameter count, FLOPs per token, memory), `docs/adr/0001-training-corpus.md` (Amendment 1), `docs/adr/0002-tokenizer.md` (Amendment 1), `docs/adr/0003-model-architecture.md` |
 | **Feeds** | `07-evaluation-plan.md` (checkpoints, metrics log, validation protocol), `08-testing-strategy.md` (training-loop tests), `11-roadmap.md` (run schedule) |
 
@@ -18,6 +18,8 @@ It also reports the **vocabulary-size pilot** (§7): two matched short runs of t
 **Status of numbers.** Every measured number below was produced by throwaway code in the session scratchpad on the project machine (RTX 5050 Laptop, 7.96 GiB), not by the production pipeline, which does not exist yet. They are labelled **preliminary (scratchpad, not the production pipeline)**. Commands and outputs are in Appendix A. The production pipeline re-measures the ones that matter (§6).
 
 **Vocabulary.** **V = 16,000**, per ADR-0002 Amendment 1 (decided by the author on the evidence of §7). All `base` figures in this document are for V = 16,000: 16,967,424 parameters (`05` formula, §5.3), 328.0M train tokens (preliminary), 20,021 steps, about 2.4 hours. The 32,000 column is kept for comparison only. `05-model-architecture.md` still shows V = 32,000 as provisional; its update is a proposed edit (§11, item 3).
+
+**Terms (added in Part D).** "Scratchpad pilot" means a throwaway experiment run in the session scratchpad before the production code exists: the vocabulary pilot of `06` §7 and the pilot model of `07`. "Production pilot" means the first run of the production code before the main run (`06` §6, gates P-a to P-d). In this document, "the pilot" means the scratchpad pilot, except where it refers to the run plan of §6 or to the gates P-a to P-d, where it means the production pilot; the full term is written where a reader could confuse them.
 
 **Out of scope:** the evaluation protocol on the test split (`07`), tests (`08`), the model itself (`05`).
 
@@ -130,8 +132,8 @@ Micro-batch 16 sequences (8,192 tokens) because it was the largest comfortable s
 
 ### 4.7 Validation during training
 
-- Evaluate the **full validation split** (about 3.06M tokens, 5,980 windows of 512 at 32k) every 1,000 steps and at the end. Measured cost: 6.6 s per 1.0M tokens at evaluation batch 8, so about 20 s per evaluation and about 6 minutes for 18 evaluations (3.6% of a 2.8-hour run).
-- Windows are non-overlapping (stride `T`), so the first tokens of each window are predicted with little context. The same windows are used for every run and vocabulary, which keeps runs comparable. `07-evaluation-plan.md` defines the evaluation protocol for the test split.
+- Evaluate the **full validation split** (about 3.34M tokens, about 6,500 windows of 512 at 16k; 3.06M tokens and 5,980 windows at 32k) every 1,000 steps and at the end. Measured cost: 6.6 s per 1.0M tokens at evaluation batch 8, so about 22 s per evaluation and about 7 minutes for 20 evaluations (5.0% of a 2.44-hour run; at 32k about 20 s, 6 minutes for 18 evaluations, 3.6% of a 2.8-hour run).
+- Windows are non-overlapping (stride `T`), so the first tokens of each window are predicted with little context. The same windows are used for every run and vocabulary, which keeps runs comparable. `07-evaluation-plan.md` defines the evaluation protocol for the test split. The final evaluation uses a strided window (512 with stride 256) as its primary protocol (`07` §4.3), so its numbers are not interchangeable with the non-overlapping validation losses logged here.
 - Logged: validation loss per token (nats), validation loss per word (nats; total negative log-likelihood divided by the number of whitespace-separated words of the validation documents, 2,071,980 in the pilot sample), and the corresponding perplexities. **Per-token numbers are comparable only between runs with the same tokenizer** (CLAUDE.md); per-word numbers can be compared across vocabularies, within the limits in §7.
 - The validation split is used to select the best checkpoint and for decisions in this document; the test split is not read by training code.
 
@@ -336,20 +338,22 @@ Each check is a test or a logged check in `08-testing-strategy.md`.
 
 ## 11. Proposed edits to earlier documents
 
-Not applied; listed for Part D.
+*Part D (2026-10-10): every row below has a status in the last column; "Applied" refers to the row identifiers of the Part D table (PD-nn), "Left to the author" rows are edits to `CLAUDE.md`.*
 
-| # | Document | Old | New |
-|---|---|---|---|
-| 1 | `04-tokenizer-spec.md` §10, row "Vocabulary size comparison" | "Tokens per word at 16k, 32k, 48k on the same validation sample, recorded in a table. 32k stays unless 16k is within 5% of it (then 16k, smaller embedding) or 48k improves by more than 15% (then reconsider)." | "Validation loss per word (nats) of the `base` model at 16k and 32k, trained for one pass over the same seeded sample of training documents (matched on text, two seeds each, settings of `06-training-plan.md` §7.1) and evaluated on the same held-out documents; tokens per word is recorded for information. The smaller vocabulary is chosen if its mean loss per word is lower by more than the larger seed-to-seed spread; otherwise 32k. 48k is evaluated only if 32k wins and the tokens per word of 48k is more than 15% lower than that of 32k. The comparison is repeated on the production tokenizer and train/validation split." |
-| 2 | `04-tokenizer-spec.md` §6 (vocabulary-size row, "*Provisional*: 16k and 48k are compared in §10 by tokens-per-word on the validation split") and §12 row "Final vocabulary size (16k / 32k / 48k) \| §10 comparison" | "compared in §10 by tokens-per-word on the validation split" | "compared in §10 by validation loss per word (see `06-training-plan.md` §7)" |
-| 3 | `05-model-architecture.md` §1 symbol table, §3 (A13), §4.10, §5, §6, §8, §12 and `docs/adr/0003-model-architecture.md` (Decision, Alternatives) | "V = 32,000 (provisional)", "N = 23,111,424", "Leading option: 16,000" | V = 16,000 (ADR-0002 Amendment 1): N = 16,967,424, token supply 328.0M, 2 epochs = 38.7 tokens per parameter, 1.03 epochs for 20 tokens per parameter, memory 3.31 GiB allocated at `B` = 16, 74.6k tokens/s; recompute every table from the formulas, keep the 32,000 column as comparison; add the §7 result and caution 2 |
-| 4 | `05-model-architecture.md` §8.3 | "Tokens/s at B = 16: 63.0k (explicit), 98.1k (fused)" | Add the real-loader figure: 60.7k tokens/s at 32k and 74.6k at 16k with the real loader, clipping, and fused AdamW (Appendix A.4) |
-| 5 | `02-design-doc.md` §4.4, Batching | "random contiguous windows of `T+1` tokens sampled from the memory-mapped train file" | add: "per epoch, non-overlapping windows at a random offset, visited in a random permutation; see `06-training-plan.md` §4.1" |
-| 6 | `02-design-doc.md` §4.4, run directory | `ckpt_step_XXXX.pt  # periodic checkpoints` | `ckpt_latest.pt`, `ckpt_best.pt`, `ckpt_step_{n}.pt` every 5,000 steps, `ckpt_final.pt`, `model_final.pt` (see §4.8) |
-| 7 | `01-prd.md` M4 | "A training run can be re-executed from its saved config and seed" | add "on the same machine and software, losses are bit-identical (measured over 150 steps); across hardware, within run-to-run noise (seed-to-seed spread of validation loss per word about 0.01 to 0.04 nats in the pilot)" |
-| 8 | `01-prd.md` M3 | "under 6 hours" | no change; record that the estimate is 2.8 h for the main run (§5) |
-| 10 | `04-tokenizer-spec.md` §6 (vocabulary size row), §9 (YAML sketch `vocab_size`), §10 | "**32,000** (including special tokens)", `vocab_size: 32000` | "**16,000** (including special tokens), ADR-0002 Amendment 1", `vocab_size: 16000`; §10 comparison as in item 1 |
-| 9 | `02-design-doc.md` §4.4, Optimizer | "Learning-rate schedule: linear warmup, then cosine decay (provisional)" | remove "(provisional)" for the shape; values are in `06` §4.4 and are themselves provisional |
+Before Part D: not applied; listed for Part D.
+
+| # | Document | Old | New | Part D status |
+|---|---|---|---|---|
+| 1 | `04-tokenizer-spec.md` §10, row "Vocabulary size comparison" | "Tokens per word at 16k, 32k, 48k on the same validation sample, recorded in a table. 32k stays unless 16k is within 5% of it (then 16k, smaller embedding) or 48k improves by more than 15% (then reconsider)." | "Validation loss per word (nats) of the `base` model at 16k and 32k, trained for one pass over the same seeded sample of training documents (matched on text, two seeds each, settings of `06-training-plan.md` §7.1) and evaluated on the same held-out documents; tokens per word is recorded for information. The smaller vocabulary is chosen if its mean loss per word is lower by more than the larger seed-to-seed spread; otherwise 32k. 48k is evaluated only if 32k wins and the tokens per word of 48k is more than 15% lower than that of 32k. The comparison is repeated on the production tokenizer and train/validation split." | Applied (PD-41) |
+| 2 | `04-tokenizer-spec.md` §6 (vocabulary-size row, "*Provisional*: 16k and 48k are compared in §10 by tokens-per-word on the validation split") and §12 row "Final vocabulary size (16k / 32k / 48k) \| §10 comparison" | "compared in §10 by tokens-per-word on the validation split" | "compared in §10 by validation loss per word (see `06-training-plan.md` §7)" | Applied (PD-43) |
+| 3 | `05-model-architecture.md` §1 symbol table, §3 (A13), §4.10, §5, §6, §8, §12 and `docs/adr/0003-model-architecture.md` (Decision, Alternatives) | "V = 32,000 (provisional)", "N = 23,111,424", "Leading option: 16,000" | V = 16,000 (ADR-0002 Amendment 1): N = 16,967,424, token supply 328.0M, 2 epochs = 38.7 tokens per parameter, 1.03 epochs for 20 tokens per parameter, memory 3.31 GiB allocated at `B` = 16, 74.6k tokens/s; recompute every table from the formulas, keep the 32,000 column as comparison; add the §7 result and caution 2 | Applied (PD-49, PD-51) |
+| 4 | `05-model-architecture.md` §8.3 | "Tokens/s at B = 16: 63.0k (explicit), 98.1k (fused)" | Add the real-loader figure: 60.7k tokens/s at 32k and 74.6k at 16k with the real loader, clipping, and fused AdamW (Appendix A.4) | Applied (PD-50) |
+| 5 | `02-design-doc.md` §4.4, Batching | "random contiguous windows of `T+1` tokens sampled from the memory-mapped train file" | add: "per epoch, non-overlapping windows at a random offset, visited in a random permutation; see `06-training-plan.md` §4.1" | Applied (PD-20) |
+| 6 | `02-design-doc.md` §4.4, run directory | `ckpt_step_XXXX.pt  # periodic checkpoints` | `ckpt_latest.pt`, `ckpt_best.pt`, `ckpt_step_{n}.pt` every 5,000 steps, `ckpt_final.pt`, `model_final.pt` (see §4.8) | Applied (PD-21) |
+| 7 | `01-prd.md` M4 | "A training run can be re-executed from its saved config and seed" | add "on the same machine and software, losses are bit-identical (measured over 150 steps); across hardware, within run-to-run noise (seed-to-seed spread of validation loss per word about 0.01 to 0.04 nats in the pilot)" | Applied (PD-07) |
+| 8 | `01-prd.md` M3 | "under 6 hours" | no change; record that the estimate is 2.8 h for the main run (§5) | No action (the estimate is recorded in `06` §5) |
+| 10 | `04-tokenizer-spec.md` §6 (vocabulary size row), §9 (YAML sketch `vocab_size`), §10 | "**32,000** (including special tokens)", `vocab_size: 32000` | "**16,000** (including special tokens), ADR-0002 Amendment 1", `vocab_size: 16000`; §10 comparison as in item 1 | Applied (PD-42) |
+| 9 | `02-design-doc.md` §4.4, Optimizer | "Learning-rate schedule: linear warmup, then cosine decay (provisional)" | remove "(provisional)" for the shape; values are in `06` §4.4 and are themselves provisional | Applied (PD-22) |
 
 ## 12. Diagrams this document needs
 

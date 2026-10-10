@@ -62,7 +62,7 @@ Reasons:
 |---|---|---|
 | SentencePiece Unigram | Rejected | Reasonable as an algorithm. The spec's objection (§6) is its normalization, a fixed character map; the context-dependent rules above would have to move into a separate preprocessing step outside the tokenizer object, against TR3 and TR6. BPE and Unigram were not compared by training both, so this choice is not an empirical result. |
 | Character-level | Rejected | No unknown characters and a small vocabulary (2,269 characters in the sample). But text is about 6.0 tokens per word, against a provisional 1.5 to 2.5 for BPE, so sequences are roughly 2.4 to 4.0 times longer. For a fixed context length the model sees that much less text per sequence, and attention cost grows with the square of sequence length. |
-| WordPiece | Rejected | Has no byte-level mode: a character outside the vocabulary becomes `[UNK]`, which conflicts with TR4 and with the rule that `<|unk|>` is never produced. The 875 single-occurrence characters in the sample alone show the tail is real. Its `##` continuation convention and training are designed for BERT-style encoders, and no benefit for a decoder-only model was identified. |
+| WordPiece | Rejected | Has no byte-level mode: a character outside the vocabulary becomes `[UNK]`, which conflicts with TR4 and with the rule that `<\|unk\|>` is never produced. The 875 single-occurrence characters in the sample alone show the tail is real. Its `##` continuation convention and training are designed for BERT-style encoders, and no benefit for a decoder-only model was identified. |
 | Vocabulary of 16k or 48k | Deferred to §10 | The size is provisional; the comparison and its decision thresholds are part of the verification. |
 
 ## Consequences
@@ -140,3 +140,9 @@ The 16k model is lower by 0.089 nats per word (8.5% lower perplexity per word), 
 - Trial tokenizers trained on 8.7% of the corpus's words with approximated normalization.
 
 **Re-confirmation.** The comparison is repeated on the production tokenizer and splits (`04` §10, proposed rule). If 32,000 then has lower mean validation loss per word by more than the seed spread, this decision is reopened.
+
+## Amendment 2 (2026-10-10): no exceptions to the digit-letter split (P3)
+
+*The text above is unchanged. Where it says that digit-letter boundaries have exceptions for one-letter prefixes and era markers (Decision, pre-tokenization bullet; reason 2; the provisional-rules bullet), read this amendment instead. The status stays Proposed.*
+
+**Decision (the author, 2026-10-10, Part D):** pre-tokenization rule P3 has **no exceptions**. Digits are always split from letters on both sides, so the one-letter prefixes و ب ل ف ك and the era markers م, هـ and ھ are their own pre-tokens. **Why:** rule P5 groups digits from the right, which attaches an exempted prefix or marker to the first or last digit group ("و2010" → "و2" + "010"; "1920م" → "1" + "920م"), so the same number would tokenize differently with and without a prefix. The conflict was found by running the rules on real strings (EXP-005). **Evidence:** with the exceptions removed in the scratchpad trial tokenizer, the pre-tokens of "و2010", "791هـ", "1920م", "1920ھ", "بـ59" and "1313 هـ" are the ones listed in `04-tokenizer-spec.md` §10 (preliminary: scratchpad code, not the production pipeline). **Cost:** a prefix is no longer attached to its number by the pre-tokenizer; the model must learn that pairing from the sequence. The rule stays provisional until the §10 check passes on the production tokenizer.
