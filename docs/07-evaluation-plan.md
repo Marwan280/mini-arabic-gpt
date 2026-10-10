@@ -223,6 +223,43 @@ Handling rules (to be confirmed in calibration):
 
 Limitation: the raters are the two authors of the project, not independent judges. Blinding and the written rubric reduce the bias; they do not remove it, and the Model Card says so.
 
+```mermaid
+flowchart TB
+    PROMPTS["50 final prompts<br/>30 test-split openings, 20 hand-written"]
+    GENM["model continuations (50)"]
+    GENB["baseline continuations (50)"]
+    CAL["10 calibration items<br/>5 development prompts, each with a model and a baseline continuation"]
+    POOL["110 items in total<br/>100 final + 10 calibration"]
+    SHUF["shuffle with a recorded seed<br/>random item ids"]
+    SHA["sheet for rater A<br/>item id, prompt, continuation"]
+    SHB["sheet for rater B<br/>item id, prompt, continuation"]
+    KEY["key: item id to system<br/>separate file, opened only after both raters finish"]
+    RATEA["rater A: acceptable 1 or 0<br/>failed criteria from G, C, D, S, note"]
+    RATEB["rater B: acceptable 1 or 0<br/>failed criteria from G, C, D, S, note"]
+    APPLY["apply the key"]
+    ANALYSE["acceptable rate per system and per rater<br/>Wilson 95% interval<br/>raw agreement and Cohen's kappa<br/>failure breakdown by G, C, D, S"]
+    RULE["M2 rule: each rater labels at least 70%<br/>of the model's 50 continuations acceptable"]
+
+    PROMPTS --> GENM
+    PROMPTS --> GENB
+    GENM --> POOL
+    GENB --> POOL
+    CAL --> POOL
+    POOL --> SHUF
+    SHUF --> SHA
+    SHUF --> SHB
+    SHUF --> KEY
+    SHA --> RATEA
+    SHB --> RATEB
+    RATEA --> APPLY
+    RATEB --> APPLY
+    KEY --> APPLY
+    APPLY --> ANALYSE
+    ANALYSE --> RULE
+```
+
+Diagram file: [08-m2-rating-workflow.md](diagrams/08-m2-rating-workflow.md)
+
 ### 5.5 Analysis and the M2 rule
 
 - **Acceptable rate** for the model and for the baseline, per rater, with the Wilson 95% interval ([statsmodels `proportion_confint`](https://www.statsmodels.org/stable/generated/statsmodels.stats.proportion.proportion_confint.html), method `wilson`). With 50 prompts the interval is wide: a true rate of 70% gives 56% to 81% (35 of 50), and 80% gives 67% to 89% (40 of 50). A pass cannot distinguish 70% from 60% (Appendix A.2).
@@ -288,6 +325,31 @@ The baseline's higher diversity is partly copying: nearly a third of its 8-token
 5. Write the results to `reports/eval/` and propose an entry for the experiment log (CLAUDE.md).
 
 Anything found after step 4 that would require changing a frozen item is reported as a deviation, not corrected silently.
+
+```mermaid
+flowchart TB
+    FREEZE["1. Freeze<br/>evaluation code, prompt files, rubric, decoding settings<br/>record their hashes, run the checks of section 8"]
+    SELECT["2. Select on the validation split only<br/>checkpoint (ckpt_best or ckpt_final)<br/>baseline order (2 to 7)"]
+    GEN["3. Generate final continuations and probe outputs<br/>50 prompts: 30 test-split openings, 20 hand-written<br/>model and baseline, 1 sample each, seed 1000 + prompt index"]
+    RATE["3. Rate (M2)<br/>blind, shuffled, two raters"]
+    G3{{"gate G3<br/>evaluation tests pass<br/>config and prompts frozen and hashed"}}
+    M1["4. Evaluate M1 on the test split, once per final candidate<br/>strided window 512, stride 256 (primary)<br/>non-overlapping windows of 512 also reported"]
+    REPORT["5. Write reports/eval/<br/>propose an experiment-log entry"]
+    DEV["validation split"]
+    TEST["test split"]
+
+    FREEZE --> SELECT
+    DEV -->|"read"| SELECT
+    SELECT --> GEN
+    TEST -->|"openings used as prompts, no tuning"| GEN
+    GEN --> RATE
+    RATE --> G3
+    G3 --> M1
+    TEST -->|"scored once"| M1
+    M1 --> REPORT
+```
+
+Diagram file: [07-evaluation-pipeline.md](diagrams/07-evaluation-pipeline.md)
 
 ## 8. Verification of the evaluation code
 

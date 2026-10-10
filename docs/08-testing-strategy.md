@@ -64,6 +64,38 @@ Status: **Decided** = decided with the author (planning questions Q1 to Q4 and t
 
 Whole prototype suite, all tiers: 68 passed and 1 expected failure in 21.3 s. The production suite will have more tests than the prototype (102 planned after Part D, 91 in the first draft; 36 prototyped; one row stands for several parametrized cases), so the fast tier is expected to grow; a plain estimate of 2 to 4 times the prototype's 6 s still leaves it under 60 s, and the budget is re-checked whenever a test is added (§9).
 
+```mermaid
+flowchart LR
+    FAST["fast tier<br/>no marker (default), CPU only<br/>prototype: 63 cases in 6.1 s<br/>-m 'not slow and not gpu and not data'<br/>before every commit"]
+    SLOW["slow tier<br/>marker slow, CPU, seconds<br/>-m 'slow or gpu'<br/>before training"]
+    GPU["gpu tier<br/>marker gpu, CUDA, skipped otherwise<br/>-m 'slow or gpu'<br/>before training"]
+    DATA["data tier<br/>marker data, needs the real data files<br/>skipped when absent<br/>part of the full run"]
+    ALL["pytest (everything)<br/>before a main run"]
+
+    FAST --> ALL
+    SLOW --> ALL
+    GPU --> ALL
+    DATA --> ALL
+```
+
+```mermaid
+flowchart LR
+    G1["G1, 2026-10-20<br/>before any training run, the pilot included<br/>all tiers except data<br/>injections I-01 to I-05, I-10, I-13, I-14<br/>the inspect_data.py guard test"]
+    PILOT["pilot"]
+    G2["G2, 2026-10-20, after the pilot<br/>before the main run<br/>everything including data<br/>the G1 injection subset<br/>pilot gates P-a to P-d"]
+    MAIN["main run"]
+    G3["G3, 2026-10-23<br/>before the test split is read<br/>evaluation tests of 07 section 8<br/>injections I-11, I-12, I-15, I-16<br/>rubric and prompt files frozen and hashed"]
+    TESTSPLIT["test split read once"]
+
+    G1 --> PILOT
+    PILOT --> G2
+    G2 --> MAIN
+    MAIN --> G3
+    G3 --> TESTSPLIT
+```
+
+Diagram file: [09-test-tiers-and-gates.md](diagrams/09-test-tiers-and-gates.md)
+
 ### 4.2 Commands
 
 ```
@@ -347,6 +379,39 @@ A test suite that has only ever passed proves little: the test may not be able t
 
 - **STALE** means the anchor no longer matches because the code changed. A stale injection blocks the gate until the manifest is updated and the injection is re-run, so the catalog cannot rot silently.
 - **Results** are written to `reports/injections/<date>.json` (injection id, commit, tests failed, message, runner version).
+
+```mermaid
+flowchart TB
+    ENTRY["manifest entry in tests/injections/manifest.yaml<br/>id, file, find, replace, must_fail, expect_message, must_pass"]
+    COPY["copy the tracked source to a temporary directory<br/>the working tree is never modified"]
+    FIND{"find occurs exactly once?"}
+    SUBST["apply the substitution find to replace"]
+    RUN["run the named tests in the copy"]
+    FAILED{"every must_fail test failed<br/>and its message matches expect_message?"}
+    PASSED{"every must_pass test still passes?"}
+    DET["DETECTED"]
+    NOT["NOT DETECTED"]
+    STALE["STALE<br/>blocks the gate until the manifest is updated"]
+    CLEAN["delete the copy"]
+    OUT["write reports/injections/date.json<br/>record in the experiment log:<br/>INJ I-xx verified date at commit"]
+
+    ENTRY --> COPY
+    COPY --> FIND
+    FIND -->|"no"| STALE
+    FIND -->|"yes"| SUBST
+    SUBST --> RUN
+    RUN --> FAILED
+    FAILED -->|"no"| NOT
+    FAILED -->|"yes"| PASSED
+    PASSED -->|"no"| NOT
+    PASSED -->|"yes"| DET
+    DET --> CLEAN
+    NOT --> CLEAN
+    STALE --> CLEAN
+    CLEAN --> OUT
+```
+
+Diagram file: [10-bug-injection-procedure.md](diagrams/10-bug-injection-procedure.md)
 
 ### 6.3 Record for the experiment log
 

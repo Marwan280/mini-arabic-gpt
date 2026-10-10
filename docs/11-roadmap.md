@@ -174,6 +174,79 @@ Two consequences:
 | 10-25 | Sun | Buffer | |
 | 10-26 | Mon | Buffer; end date and submission | |
 
+```mermaid
+gantt
+    title Plan, part 1 (2026-10-11 to 2026-10-17)
+    dateFormat YYYY-MM-DD
+    axisFormat %m-%d
+    section Marwan
+    M01 Mark the Part D table           :m01, 2026-10-11, 1d
+    M02 Decide EXP-005 and open rules   :m02, 2026-10-12, 1d
+    M22 Tokenizer tests first           :m22, 2026-10-12, 4d
+    M03 Review the fixture              :m03, 2026-10-13, 1d
+    M04 Data pipeline                   :m04, 2026-10-13, 3d
+    M06 Model tests first               :m06, 2026-10-15, 2d
+    M05 Model code                      :m05, 2026-10-16, 1d
+    M07 Production data run             :m07, 2026-10-17, 1d
+    section Ghada
+    G01 Test scaffold                   :g01, 2026-10-11, 1d
+    G03 Data tests first                :g03, 2026-10-12, 2d
+    G02 Review the fixture              :g02, 2026-10-13, 1d
+    G05 Tokenizer code                  :g05, 2026-10-15, 2d
+    G06 Training tests first            :g06, 2026-10-16, 2d
+    section Project machine
+    Data pipeline and tokenizer run     :crit, pm1, 2026-10-17, 1d
+    section Gates and checkpoints
+    Docs merged into main               :milestone, md, 2026-10-11, 0d
+    C1                                  :milestone, c1, 2026-10-15, 0d
+    C2                                  :milestone, c2, 2026-10-17, 0d
+```
+
+```mermaid
+gantt
+    title Plan, part 2 (2026-10-18 to 2026-10-26)
+    dateFormat YYYY-MM-DD
+    axisFormat %m-%d
+    section Marwan
+    M08 Pilot                           :m08, 2026-10-20, 1d
+    M09 Main run launched               :m09, 2026-10-20, 1d
+    M19 Approve prompts and texts       :m19, 2026-10-21, 1d
+    M10 Evaluation code                 :m10, 2026-10-21, 1d
+    M11 Baseline store                  :m11, 2026-10-22, 1d
+    M17 Rating items                    :m17, 2026-10-22, 1d
+    M18 Calibration and rating          :m18, 2026-10-22, 1d
+    M12 M1 on the test split            :m12, 2026-10-23, 1d
+    M13 Analyse M1                      :m13, 2026-10-23, 1d
+    M14 Model Card                      :m14, 2026-10-24, 1d
+    section Ghada
+    G07 Training code                   :g07, 2026-10-18, 2d
+    G08 Injection runner G1 subset      :g08, 2026-10-19, 2d
+    G09 Core evaluation tests           :g09, 2026-10-21, 1d
+    G18 Generation module               :g18, 2026-10-21, 1d
+    G11 Generation tests                :g11, 2026-10-21, 1d
+    G12 Approve prompts                 :g12, 2026-10-21, 1d
+    G14 Calibration and rating          :g14, 2026-10-22, 1d
+    G13 Demo and 14 demo tests          :g13, 2026-10-23, 1d
+    G19 Recording                       :g19, 2026-10-23, 1d
+    G10 Review README and Model Card    :g10, 2026-10-24, 1d
+    G20 Final consistency check         :g20, 2026-10-24, 1d
+    section Project machine
+    Pilot on the GPU, morning           :crit, pm2, 2026-10-20, 1d
+    Main run planned                    :crit, pm3, 2026-10-20, 1d
+    Spare slot and latest start         :pm4, 2026-10-21, 1d
+    Baseline build                      :pm5, 2026-10-23, 1d
+    section Gates and checkpoints
+    G1 and G2                           :milestone, g1, 2026-10-20, 0d
+    C3                                  :milestone, c3, 2026-10-21, 0d
+    G3                                  :milestone, g3, 2026-10-23, 0d
+    Last planned working day            :milestone, lw, 2026-10-24, 0d
+    section Buffer
+    Buffer                              :bf1, 2026-10-25, 1d
+    Buffer and end date                 :bf2, 2026-10-26, 1d
+```
+
+Diagram file: [13-timeline.md](diagrams/13-timeline.md)
+
 ### 7.2 Level 1 tasks (Tier A)
 
 Tasks are in order of due date. Owners follow the README roles, with deliberate crossings (P6): Marwan writes the tokenizer tests (the code is Ghada's); Ghada writes the data tests and the core evaluation tests (the code is Marwan's). The model tests, the training tests, and the generation tests are written by the author of the code.
@@ -240,6 +313,50 @@ Level 3 (not scheduled; the order is the reverse of the cut order, so the first 
 `Part D marks (10-11)` → `decision on EXP-005 (10-12)` → `tokenizer tests (10-15)` → `tokenizer code (10-16)` → `production data run (10-17)` → `pilot (10-20)` → `main run (10-20)` → `M1 evaluation (10-23)` → `analysis` → `Model Card (10-24)`.
 
 The data tests, data pipeline, model code, training tests and code, and the injection runner run in parallel with it and join at the pilot. The plan has about 10 planned hours of slack before the pilot (§5.3) and a small deficit in the last three working days; the two buffer days (10-25 and 10-26) absorb that.
+
+```mermaid
+graph LR
+    M01["M01 Part D marks<br/>10-11"]
+    M02["M02 decision on EXP-005<br/>10-12"]
+    M22["M22 tokenizer tests<br/>10-15"]
+    G05["G05 tokenizer code<br/>10-16"]
+    M07["M07 production data run<br/>10-17"]
+    M08["M08 pilot<br/>10-20"]
+    M09["M09 main run<br/>10-20, latest start 10-21"]
+    M12["M12 M1 evaluation<br/>10-23"]
+    M13["M13 analysis<br/>10-23"]
+    M14["M14 Model Card<br/>10-24"]
+
+    G03["G03 data tests<br/>10-13"]
+    M04["M04 data pipeline<br/>10-15"]
+    M06["M06 model tests<br/>10-16"]
+    M05["M05 model code<br/>10-16"]
+    G06["G06 training tests<br/>10-17"]
+    G07["G07 training code<br/>10-19"]
+    G08["G08 injection runner<br/>10-20"]
+    G1{{"gate G1<br/>10-20"}}
+
+    M10["M10 evaluation code<br/>10-21"]
+    M11["M11 baseline store<br/>10-22"]
+    G3{{"gate G3<br/>10-23"}}
+
+    M01 ==> M02 ==> M22 ==> G05 ==> M07 ==> M08 ==> M09 ==> M12 ==> M13 ==> M14
+
+    G03 --> M04 --> M07
+    M06 --> M05 --> G07
+    G06 --> G07
+    G07 --> G08
+    M05 --> G08
+    G07 --> M08
+    G08 --> M08
+    M08 --> G1
+    G1 --> M09
+
+    M05 --> M10 --> M11 --> M12
+    G3 --> M12
+```
+
+Diagram file: [14-critical-path.md](diagrams/14-critical-path.md)
 
 ### 7.6 Working rules
 

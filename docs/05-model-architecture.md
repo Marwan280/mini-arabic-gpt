@@ -96,6 +96,30 @@ token IDs (B, T)
                           LayerNorm  ─►  linear head (weight tied to wte)  ─►  logits (B, T, V)
 ```
 
+```mermaid
+flowchart TB
+    IDS["token IDs<br/>int64"]
+    WTE["token embedding wte<br/>(V, C), V = 16,000, C = 384"]
+    WPE["position embedding wpe<br/>(T, C), T = 512"]
+    ADD["add"]
+    BLK["transformer block, repeated L = 6 times<br/>x = x + Attention(LayerNorm(x))<br/>x = x + MLP(LayerNorm(x))"]
+    FLN["final LayerNorm"]
+    HEAD["linear head, no bias<br/>weight tied to wte"]
+    OUT["logits"]
+
+    IDS -->|"(B, T)"| WTE
+    IDS -->|"positions 0 to T-1"| WPE
+    WTE -->|"(B, T, C)"| ADD
+    WPE -->|"(T, C)"| ADD
+    ADD -->|"x (B, T, C)"| BLK
+    BLK -->|"(B, T, C)"| FLN
+    FLN -->|"(B, T, C)"| HEAD
+    HEAD -->|"(B, T, V)"| OUT
+    WTE -. "the same (V, C) matrix" .- HEAD
+```
+
+Diagram file: [01-model-overview.md](diagrams/01-model-overview.md)
+
 ### 4.2 Block
 
 Pre-layer normalization: each sub-layer reads a normalized copy of `x` and adds its output back to the unnormalized `x`. `LayerNorm` is PyTorch's `nn.LayerNorm` (learned weight and bias, ε = 1e-5). `Linear` layers have no bias (A6). This matches the structure of [nanoGPT's `Block`](https://github.com/karpathy/nanoGPT/blob/master/model.py); the placement of normalization at the input of each sub-block is the GPT-2 design.
@@ -118,6 +142,61 @@ out     = c_proj(merge_heads(y))                    # (B, T, C); c_proj: Linear(
 - No attention dropout (A8).
 - This is the computation that [`torch.nn.functional.scaled_dot_product_attention`](https://docs.pytorch.org/docs/2.14/generated/torch.nn.functional.scaled_dot_product_attention.html) documents as its equivalent reference implementation (PyTorch 2.14), so the explicit version is also the specification of the fused one.
 - The causal-mask test (`08-testing-strategy.md`) targets this code directly: change tokens at positions ≥ k and assert the logits at positions < k do not change.
+
+```mermaid
+flowchart TB
+    XIN["x in"]
+    LN1["LayerNorm"]
+    ATT["causal self-attention (second diagram)"]
+    ADD1["add: x + attention output"]
+    LN2["LayerNorm"]
+    FC1["Linear(C, 4C), no bias<br/>4C = 1,536"]
+    GELU["GELU"]
+    FC2["Linear(4C, C), no bias"]
+    ADD2["add: x + MLP output"]
+    XOUT["x out"]
+
+    XIN -->|"(B, T, C)"| LN1
+    LN1 -->|"(B, T, C)"| ATT
+    ATT -->|"(B, T, C)"| ADD1
+    XIN -->|"skip (B, T, C)"| ADD1
+    ADD1 -->|"(B, T, C)"| LN2
+    LN2 -->|"(B, T, C)"| FC1
+    FC1 -->|"(B, T, 4C)"| GELU
+    GELU -->|"(B, T, 4C)"| FC2
+    FC2 -->|"(B, T, C)"| ADD2
+    ADD1 -->|"skip (B, T, C)"| ADD2
+    ADD2 -->|"(B, T, C)"| XOUT
+```
+
+```mermaid
+flowchart TB
+    X["x (normalized)"]
+    CATTN["c_attn: Linear(C, 3C)"]
+    SPLIT["split into q, k, v"]
+    HEADS["reshape each to heads<br/>H = 6, d_head = 64"]
+    SCORES["scores = q @ k^T / sqrt(d_head)"]
+    MASK["masked_fill with -inf where not lower-triangular<br/>mask (1, 1, T, T), T = 512"]
+    SOFT["softmax over the last dimension"]
+    AV["weights @ v"]
+    MERGE["merge heads"]
+    CPROJ["c_proj: Linear(C, C)"]
+    OUT["attention output"]
+
+    X -->|"(B, T, C)"| CATTN
+    CATTN -->|"(B, T, 3C)"| SPLIT
+    SPLIT -->|"q, k, v each (B, T, C)"| HEADS
+    HEADS -->|"q, k, v each (B, H, T, d_head)"| SCORES
+    SCORES -->|"(B, H, T, T)"| MASK
+    MASK -->|"(B, H, T, T)"| SOFT
+    SOFT -->|"weights (B, H, T, T)"| AV
+    HEADS -->|"v (B, H, T, d_head)"| AV
+    AV -->|"(B, H, T, d_head)"| MERGE
+    MERGE -->|"(B, T, C)"| CPROJ
+    CPROJ -->|"(B, T, C)"| OUT
+```
+
+Diagram file: [02-block-and-attention.md](diagrams/02-block-and-attention.md)
 
 ### 4.4 MLP
 
@@ -342,6 +421,28 @@ Static memory is 16 bytes per parameter (`float32` weight, gradient, and two Ada
 | **16** | **4.79 / 5.66** | **3.96 / 4.77** |
 | 20 | 5.91 / 7.05 | 4.86 / 7.20 |
 | 24 | 7.01 / **8.42** | 5.75 / 7.06 |
+
+```mermaid
+xychart-beta
+    title "Explicit attention, GiB"
+    x-axis "micro-batch B (sequences)" [4, 8, 12, 16, 20, 24]
+    y-axis "GiB" 0 --> 9
+    bar [1.48, 2.59, 3.69, 4.79, 5.91, 7.01]
+    line [1.79, 2.91, 5.03, 5.66, 7.05, 8.42]
+    line [7.96, 7.96, 7.96, 7.96, 7.96, 7.96]
+```
+
+```mermaid
+xychart-beta
+    title "Fused attention (sdpa), GiB"
+    x-axis "micro-batch B (sequences)" [4, 8, 12, 16, 20, 24]
+    y-axis "GiB" 0 --> 9
+    bar [1.27, 2.16, 3.06, 3.96, 4.86, 5.75]
+    line [1.58, 2.49, 4.37, 4.77, 7.20, 7.06]
+    line [7.96, 7.96, 7.96, 7.96, 7.96, 7.96]
+```
+
+Diagram file: [03-memory-against-micro-batch.md](diagrams/03-memory-against-micro-batch.md)
 
 Fitted from the table: peak allocated ≈ 0.37 + 0.277·`B` GiB (explicit) and 0.37 + 0.225·`B` GiB (fused). The intercept 0.37 GiB matches the static 0.344 GiB.
 

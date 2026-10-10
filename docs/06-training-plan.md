@@ -84,6 +84,29 @@ for step in range(start_step, total_steps):
     optimizer.step(); optimizer.zero_grad(set_to_none=True)
 ```
 
+```mermaid
+sequenceDiagram
+    participant S as Sampler
+    participant M as Model (float32 parameters)
+    participant L as Loss (float32)
+    participant O as AdamW (float32 state)
+    participant G as Log
+
+    Note over O: lr = lr_at(step), set in every parameter group
+    loop micro in range(4)
+        S->>M: x (16, 512) int64, y (16, 512) int64
+        Note over M: forward under autocast bfloat16
+        M->>L: logits (16, 512, V) bfloat16, V = 16,000
+        Note over L: mean cross-entropy over reshape(-1, V)
+        L->>M: (loss / 4).backward(), gradients float32
+    end
+    M->>O: clip_grad_norm_(parameters, 1.0), returns grad_norm
+    O->>O: step(), then zero_grad(set_to_none=True)
+    O->>G: step, lr, mean of the 4 micro-batch losses, grad_norm
+```
+
+Diagram file: [04-one-optimizer-step.md](diagrams/04-one-optimizer-step.md)
+
 - Loss scaling by 1/4 and equal-size micro-batches make the accumulated gradient equal the gradient of one batch of 64 sequences. Measured on `tiny` in `float32`: the maximum gradient difference between one batch of 16 and 8 micro-batches of 2 with loss/8 is 5.6e-9 (gradient magnitudes up to 1.0e-2); without the scaling the gradient is 8.0 times too large (Appendix A.2). The equality needs every micro-batch to have the same number of target tokens; that holds here because there is no padding or ignored target. If padding or masked targets ever appear, the loss must be normalized by the total number of target tokens instead.
 - The loss is `float32` cross-entropy over `reshape(-1, V)` of the logits and `reshape(-1)` of the targets (`05` §9: `view` fails on the sliced targets).
 - The logged training loss is the mean of the 4 micro-batch losses.
@@ -113,6 +136,28 @@ Linear warmup for 400 steps from `peak/401` to `peak`, then cosine decay to `min
 | Warmup | 400 steps (about 2% of the run) | nanoGPT baby config 100 of 5,000 steps; the pilot used 100 of 3,366 |
 
 **Provisional.** The peak learning rate was not searched. At 4 times the pilot's batch (T6) 1e-3 is a guess that the pilot makes plausible, not a measurement. **Fallback: 6e-4** (the GPT-2 value), used by the spare run if the main run shows instability (§6).
+
+```mermaid
+flowchart LR
+    W["warmup, steps 0 to 400<br/>peak/401 up to peak = 1e-3"]
+    C["cosine decay<br/>1e-3 down to min_lr = 1e-4 at the last step"]
+    K["constant<br/>min_lr = 1e-4"]
+    W --> C --> K
+    R16["total_steps = 20,021 at V = 16,000 (chosen)"]
+    R32["total_steps = 18,381 at V = 32,000 (comparison)"]
+    C --- R16
+    C --- R32
+```
+
+```mermaid
+xychart-beta
+    title "Learning rate, V = 16,000 (x 1e-4)"
+    x-axis "step" [0, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000, 11000, 12000, 13000, 14000, 15000, 16000, 17000, 18000, 19000, 20000]
+    y-axis "learning rate (x 1e-4)" 0 --> 10
+    line [0.025, 9.979, 9.853, 9.616, 9.273, 8.834, 8.309, 7.712, 7.059, 6.366, 5.651, 4.932, 4.228, 3.556, 2.934, 2.377, 1.901, 1.516, 1.233, 1.060, 1.0]
+```
+
+Diagram file: [05-learning-rate-schedule.md](diagrams/05-learning-rate-schedule.md)
 
 Run lengths with these settings: `total_steps` = ⌈2 × tokens in the train split / 32,768⌉; at the preliminary supply 20,021 steps at V = 16,000 (18,381 at 32,000) (§5).
 
@@ -277,6 +322,34 @@ Validation loss per word (nats) at 1/6, 2/6, … 6/6 of the pass over the text (
 | Logged loss per word (seed 1 / 2) | 7.2954 / 7.3347 | 7.4103 / 7.3971 |
 
 The loss per word is exactly the total negative log-likelihood over the scored tokens divided by the words of all held-out documents. The unscored tail is 0.013% to 0.014% of the tokens in both cases, so omitting it changes a loss of about 7.3 nats by at most about 0.001 nats, which is 1% of the 0.089 gap and below the seed spread. The `<|endoftext|>` cost is counted for both vocabularies in the same way (one per document). The per-word number therefore measures the cost of modelling the same text, including the document boundary, with the vocabulary as the only difference.
+
+```mermaid
+xychart-beta
+    title "V = 32,000, nats per word (seed 1, seed 2)"
+    x-axis "fraction of the pass" ["1/6", "2/6", "3/6", "4/6", "5/6", "6/6"]
+    y-axis "nats per word" 7 --> 9.6
+    line [9.2469, 8.4517, 8.0068, 7.7024, 7.5114, 7.4103]
+    line [9.2556, 8.4624, 8.0160, 7.6991, 7.5005, 7.3971]
+```
+
+```mermaid
+xychart-beta
+    title "V = 16,000, nats per word (seed 1, seed 2)"
+    x-axis "fraction of the pass" ["1/6", "2/6", "3/6", "4/6", "5/6", "6/6"]
+    y-axis "nats per word" 7 --> 9.6
+    line [9.3926, 8.5131, 8.0329, 7.6777, 7.4261, 7.2954]
+    line [9.4394, 8.5591, 8.0700, 7.7116, 7.4615, 7.3347]
+```
+
+```mermaid
+xychart-beta
+    title "16,000 minus 32,000, mean nats per word"
+    x-axis "fraction of the pass" ["1/6", "2/6", "3/6", "4/6", "5/6", "6/6"]
+    y-axis "nats per word" -0.1 --> 0.2
+    bar [0.1648, 0.0791, 0.0401, -0.0061, -0.0622, -0.0887]
+```
+
+Diagram file: [06-vocabulary-pilot-curves.md](diagrams/06-vocabulary-pilot-curves.md)
 
 ### 7.3 How far to trust it
 

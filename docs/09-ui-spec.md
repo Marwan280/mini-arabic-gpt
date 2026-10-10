@@ -92,6 +92,48 @@ Status: **Decided** = decided with the author; **Provisional** = depends on a me
 +--------------------------------------------------------------------------+
 ```
 
+```mermaid
+flowchart TB
+    subgraph TOP["header"]
+        HDR["title: mini-arabic-gpt<br/>English description<br/>one-line Arabic description (right-to-left)"]
+    end
+    subgraph INPUT["input"]
+        PROMPT["Prompt (right-to-left, 3 lines)<br/>up to 100 tokens"]
+        EXAMPLES["Examples: six prompts"]
+        SETTINGS["Temperature 0.1 to 1.5<br/>Top-k 1 to 100<br/>Max new tokens 10 to 200<br/>Seed (empty = random)"]
+    end
+    subgraph BUTTONS["actions"]
+        GEN["Generate"]
+        STOP["Stop"]
+    end
+    subgraph LIMITS["always visible, directly above the output"]
+        LEN["LIMITATIONS (English)"]
+        LAR["LIMITATIONS (Arabic, right-to-left)"]
+    end
+    subgraph OUTPUT["output"]
+        CONT["Continuation (right-to-left, streams, copy button)"]
+        STATUS["status: tokens, tokens/s, device, seed"]
+        NORM["Prompt after normalization (right-to-left)"]
+        TOKP["Prompt tokens: #, piece, id"]
+        TOKC["Continuation tokens: #, piece, id"]
+    end
+
+    HDR --> PROMPT
+    PROMPT --- EXAMPLES
+    PROMPT --- SETTINGS
+    PROMPT --> GEN
+    GEN --- STOP
+    GEN --> LEN
+    LEN --> LAR
+    LAR --> CONT
+    CONT --> STATUS
+    STATUS --> NORM
+    NORM --> TOKP
+    NORM --> TOKC
+```
+
+Diagram file: [11-interface-layout.md](diagrams/11-interface-layout.md)
+
 ### 5.2 Components
 
 All argument names were checked against the installed Gradio 6.30.0 (Appendix A.1) and the [Gradio documentation](https://www.gradio.app/docs/gradio/blocks).
@@ -147,6 +189,47 @@ The prompt tokens are those of the normalized prompt (what the model actually re
 3. The context never exceeds 100 + 200 = 300 tokens, below the context length of 512, so the sliding window of Design §4.6 is never needed; the app asserts it.
 4. The text is yielded every 4 new tokens and once more at the end with the status and the two token tables.
 5. The seed is an integer; if empty, one is drawn at random once and shown, so a run can be repeated.
+
+```mermaid
+sequenceDiagram
+    actor U as User
+    participant UI as Gradio app
+    participant T as Tokenizer object
+    participant G as generate loop
+    participant M as Model
+
+    U->>UI: click Generate (prompt, temperature, top-k, max new tokens, seed)
+    UI->>UI: empty prompt?
+    alt prompt is only whitespace
+        UI-->>U: error "Please enter a prompt (a few words in Arabic)." (no generation)
+    end
+    UI->>T: normalize and encode the prompt
+    T-->>UI: token ids
+    alt more than 100 tokens
+        UI-->>U: error "The prompt is N tokens#59; the limit is 100 (about 60 words). Please shorten it." (no generation)
+    end
+    opt device is the CPU and max new tokens is above 100
+        UI-->>U: warning, outputs of more than 100 new tokens can take more than 10 seconds
+    end
+    UI->>G: start (seed shown, drawn at random if empty)
+    loop at most max_new steps, stop at endoftext
+        G->>M: current context
+        M-->>G: logits
+        Note over G: divide by temperature, keep the top_k largest, sample with the seeded generator, append
+        opt every 4 new tokens
+            G-->>UI: partial text
+            UI-->>U: streamed text
+        end
+        opt user clicks Stop
+            U->>UI: Stop
+            UI->>G: cancel the running event
+        end
+    end
+    G-->>UI: final text, status, prompt and continuation token tables
+    UI-->>U: continuation, status line, normalized prompt, two token tables
+```
+
+Diagram file: [12-request-flow.md](diagrams/12-request-flow.md)
 
 ### 6.2 Latency (measured on the prototype)
 
