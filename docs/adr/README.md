@@ -10,3 +10,5 @@ Architecture Decision Records (ADRs) capture each significant project decision: 
 | [0004](0004-training-recipe.md) | Training recipe | Proposed | 2026-10-09 |
 | [0005](0005-evaluation-protocol.md) | Evaluation protocol | Proposed | 2026-10-09 |
 | [0006](0006-testing-strategy.md) | Testing strategy | Proposed | 2026-10-09 |
+| [0007](0007-demo.md) | Demo: local Gradio app, optional publication | Proposed | 2026-10-10 |
+| [0008](0008-model-licence.md) | Licence of the published weights | Proposed | 2026-10-10 |

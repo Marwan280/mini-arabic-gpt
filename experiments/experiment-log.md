@@ -97,3 +97,14 @@ Copy this block for each new entry. Use the next free ID. Dates are ISO (YYYY-MM
 - **Root cause:** The tests were judged by whether they passed on correct code and failed under the injection, without checking that they failed for the intended reason, and the test data was not checked for being able to discriminate between a correct and a broken implementation.
 - **Fix:** (1) the test builds its targets with the project's own batch builder on random windows (independent targets), which also lets it catch I-02 for a tied head. (2) per-document losses now vary; with I-16 the interval is (-0.1255, 0.1253). After the fixes the correct code passed (68 passed, 1 expected failure) and all 16 injections were detected by their intended tests.
 - **Lesson:** Run every test against the correct code and against its injection before trusting it, and read the failure message of the injected run to confirm it shows the intended mechanism.
+
+### EXP-008: The plan assumed free Gradio hosting on Hugging Face Spaces without checking the hosting terms
+
+- **ID:** EXP-008
+- **Date:** 2026-10-10
+- **Stage:** UI specification (research for `docs/09-ui-spec.md`)
+- **What happened:** The PRD (G5, M5, deliverable 5), the Design Doc (§4.7, D7: "Gradio demo on Hugging Face Spaces (CPU)", reason "free hosting"), and CLAUDE.md all assumed that a Gradio Space on the free CPU tier could host the demo. The current Hugging Face documentation, read on 2026-10-09, says that creating a Gradio or Docker Space requires a paid plan (PRO for personal accounts); the only free exception is up to two Gradio Spaces on ZeroGPU for personal accounts with a verified email and an age over 30 days. Static Spaces are free but cannot run the model server-side.
+- **How it was caught:** By reading the Spaces Overview, GPU Upgrades, and ZeroGPU pages while researching the hosting section of the UI spec, before any code or deployment was attempted.
+- **Root cause:** The hosting assumption was written as a fact in D7 and in the PRD without checking the platform's current terms; the project's docs-first process records decisions but did not require external service terms to be verified when a plan depends on them (compare EXP-001).
+- **Fix:** v1 is a local Gradio demo (ADR-0007). Publishing on ZeroGPU is documented as an optional post-v1 step with its account conditions. The changes to PRD G5, M5, and deliverables 4 and 5, to Design D7 and §4.7, and to the README are listed in `docs/09-ui-spec.md` §12 for the consistency review; the change to CLAUDE.md is flagged for the author.
+- **Lesson:** When a plan depends on an external service's terms, limits, or prices, read the current terms and cite them with the date when the decision is made, and record what was not checked.
