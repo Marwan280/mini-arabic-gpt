@@ -12,9 +12,9 @@ Guidance for Claude Code when working in this repository. Read this fully at the
 
 ## Current phase
 
-**Phase 1: Documentation.** The only code is the corpus inspection tooling: `scripts/inspect_data.py`, with outputs in `reports/data-inspection/` and dependencies in `requirements-dev.txt`. No model, tokenizer, or data-pipeline code exists yet. Do not create other code files, code folders, or configs until the relevant doc is approved and I ask for them.
+**Phase 2: Implementation**, from 2026-10-12, test-first, following `docs/11-roadmap.md`. Phase 1 (documentation, specs 01–11 and ADRs 0001–0009) is finished. Code folders and files are created as each component starts, on my request, and only against its approved doc; no component is merged without its tests passing. Before Phase 2 the only code was the corpus inspection tooling: `scripts/inspect_data.py`, with outputs in `reports/data-inspection/` and dependencies in `requirements-dev.txt`.
 
-The code layout (`src/`, `tests/`, `scripts/`, `configs/`, `app/`) is provisional. It gets finalized in `docs/02-design-doc.md`.
+The code layout (`src/`, `tests/`, `scripts/`, `configs/`, `app/`) is specified in `docs/02-design-doc.md` §6.
 
 ## Environment
 
@@ -97,7 +97,12 @@ When I correct a mistake in your reasoning or code, propose a log entry covering
 docs/          Project documentation (01–11), adr/, diagrams/
 experiments/   Experiment log
 scripts/       Corpus inspection tool (inspect_data.py)
-reports/       Data inspection outputs (metrics, reading samples)
+reports/       Data inspection outputs (metrics, reading samples); reports/eval/ for evaluation runs
+src/           Importable package (created when the first component starts)
+tests/         pytest suite (created with the first component)
+configs/       YAML configs (created when needed)
+app/           Local Gradio demo (created when the demo starts)
+artifacts/     Tokenizer files (created by tokenizer training)
 requirements-dev.txt  Dev and inspection dependencies
 CLAUDE.md      This file
 README.md      Project entry point
